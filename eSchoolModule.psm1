@@ -756,160 +756,40 @@ function Get-eSPStudents {
 
     [CmdletBinding(DefaultParametersetName="default")]
     Param(
-        [Parameter(Mandatory=$true,ParameterSetName="default",ValueFromPipeline=$true)]$Building #ID of the Building
+        [Parameter(Mandatory=$false,ParameterSetName="default",ValueFromPipeline=$true)]$Building, #ID of the Building
+        [Parameter(Mandatory=$false,ParameterSetName="all")][switch]$InActive,
+        [Parameter(Mandatory=$false,ParameterSetName="all")][switch]$Graduated,
+        [Parameter(Mandatory=$false,ParameterSetName="all")][switch]$All #Include Graduated and Inactive.
     )
 
-    Begin {
-        Assert-eSPSession
-        $students = [System.Collections.Generic.List[Object]]::new()
-        $schoolIds = [System.Collections.Generic.List[Object]]::new()
-    }
-
-    Process {
-
-        if ($Building.School_id) {
-            #incoming object has the School_id property.
-            $schoolIds.Add($Building.School_id)
-        } elseif (([string]$Building).IndexOf(',') -ge 1) {
-            #comma separated string. Still get an array for $schoolIds.
-            $schoolIds = $Building.Split(',')
-        } else {
-            #should be processing an array
-            $schoolIds = $building
-        }
-
-    }
-
-    End {
-
-        Write-Verbose "Buildings $($schoolIds -join ',')"
-
-        $schoolIds | ForEach-Object {
-
-            $params = [ordered]@{
-                "Filter" = [ordered]@{
-                "LoginId" = $eSchoolSession.Username
-                "SearchType" = "REGMASSUPDATE"
-                "SearchNumber" = "0"
-                "GroupingMask" = ""
-                "Predicates"= @(
-                    [ordered]@{
-                        LogicalOperator = "And"
-                        PredicateIndex = 1
-                        TableName = "reg"
-                        ColumnName = "current_status"
-                        Operator = "Equal"
-                        DataType = "Char"
-                        Value = "A"
-                    },
-                    [ordered]@{
-                        LogicalOperator = "And"
-                        PredicateIndex = 2
-                        TableName = "reg"
-                        ColumnName = "building"
-                        Operator = "Equal"
-                        DataType = "Int"
-                        Value = [int]$($PSitem)
-                    }
-                )
-                }
-            }
-
-            $jsonPayload = $params | ConvertTo-Json -Depth 99
-
-            Write-Verbose $jsonPayload
-
-            $response = Invoke-RestMethod -Uri "$($eschoolSession.Url)/Utility/GetRegistrationMUFilterResultsGridData" `
-            -Method "POST" `
-            -WebSession $eSchoolSession.session `
-            -ContentType "application/json; charset=UTF-8" `
-            -Body $jsonPayload
-            
-            if ($response.gridData) {
-                $response.gridData | ForEach-Object {
-                    $student = [PSCustomObject]@{
-                        Student_id = [string]$PSItem.StudentID
-                        Last_name = $PSItem.StudentName.Split(', ')[0]
-                        First_name = $PSItem.StudentName.Split(', ')[1]
-                        Grade = $PSitem.Grade
-                        School_id = [int]$PSItem.BuildingNum
-                    }
-                    $students.Add($student)
-                }
-            } else {
-                Write-Error "No records returned for building $PSitem."
-            }
-
-            
-        }
-
-        return $students
-
-    }
-}
-
-function Get-eSPStudentDetails {
-    <#
+    Assert-eSPSession
     
-    .SYNOPSIS
-    Get some more details from the QuickSearch
-    
-    #>
+    $params = @()
+    $index = 0
 
-    Param(
-        [Parameter(Mandatory=$true,ValueFromPipeline=$true)]$StudentId
-    )
-
-    Begin {
-        Assert-eSPSession
-        $students = [System.Collections.Generic.List[Object]]::new()
-        $studentIds = [System.Collections.Generic.List[Object]]::new()
+    if ($Building) {
+        $params += New-eSPSearchPredicate -index $index -TableName REG -ColumnName BUILDING -Operator Equal -DataType Int -Values $($Building)
+        $index++
     }
 
-    Process {
-        if ($StudentId.Student_id) {
-            #incoming object has the School_id property.
-            $studentIds.Add($StudentId.Student_id)
-        } elseif (([string]$StudentId).IndexOf(',') -ge 1) {
-            #comma separated string. Still get an array for $studentIds.
-            $studentIds = $StudentId.Split(',')
-        } else {
-            #should be processing an array
-            $studentIds = $StudentId
-        }
+    if ($InActive) {
+        $params += New-eSPSearchPredicate -index $index -TableName REG -ColumnName CURRENT_STATUS -Operator In -DataType Char -Values "I"
+        $index++
+    } elseif ($Graduated) {
+        $params += New-eSPSearchPredicate -index $index -TableName REG -ColumnName CURRENT_STATUS -Operator In -DataType Char -Values "G"
+        $index++
+    } elseif ($All) {
+        $params += New-eSPSearchPredicate -index $index -TableName REG -ColumnName CURRENT_STATUS -Operator In -DataType Char -Values "A,I,G"
+        $index++
+    } else {
+        $params += New-eSPSearchPredicate -index $index -TableName REG -ColumnName CURRENT_STATUS -Operator In -DataType Char -Values "A"
+        $index++
     }
 
-    End {
+    # Here we need to start adding the SearchListField from REGMAINT. See the document in resources (incomplete).
+    # New-eSPSearchListField
 
-        Write-Verbose ($studentIds | ConvertTo-Json)
-        $students = $studentIds | ForEach-Object -Parallel {
-
-            try {
-                $response = Invoke-RestMethod -Uri "$(($using:eschoolSession).Url)/Search/QuickSearch?query=$($PSitem)&Limit=1" -WebSession ($using:eSchoolSession).session
-            
-                Write-Verbose $response.SearchQuery
-
-                if ($response.SearchQuery -eq "$($PSItem)") {
-                    [PSCustomObject]@{
-                        Student_id = [string]$response.StudentResults.StudentID
-                        Last_name = $response.StudentResults.LastName
-                        First_name = $response.StudentResults.FirstName
-                        Middle_name = $response.StudentResults.MiddleName
-                        School_id = $response.StudentResults.BuildingId
-                        Grade = $response.StudentResults.Grade
-                        Age = $response.StudentResults.Age
-                        Status = $response.StudentResults.CurrentStatus
-                    }
-
-                }
-            } catch {
-                return
-            }
-            
-        } -ThrottleLimit 10
-
-        return $students
-    }
+    return Invoke-eSPExecuteSearch -SearchType REGMAINT -SearchParams $params
 
 }
 
@@ -1494,7 +1374,9 @@ function New-eSPInterfaceHeader {
         [Parameter(Mandatory=$false)]$Description,
         [Parameter(Mandatory=$true)]$FileName,
         [Parameter(Mandatory=$true)]$TableName,
-        [Parameter(Mandatory=$false)]$AdditionalSql = ""
+        [Parameter(Mandatory=$false)]$AdditionalSql = "",
+        [Parameter(Mandatory=$false)]$Delimiter = ","
+        # [Parameter(Mandatory=$false)][switch]$UploadDef #if this is an upload definition we need additional information.
     )
 
     $interfaceHeader = [ordered]@{
@@ -1504,7 +1386,7 @@ function New-eSPInterfaceHeader {
         Description = $Description
         FileName = $FileName
         LastRunDate = $null
-        DelimitChar = ","
+        DelimitChar = $Delimiter
         TableAffected = $TableName
         UseChangeFlag = $False
         AdditionalSql = $AdditionalSql
@@ -1522,6 +1404,18 @@ function New-eSPInterfaceHeader {
         }
     }
 
+    # if ($UploadDef) {
+    #     $interfaceHeader += [ordered]@{
+    #         AffectedTableObject = @{
+    #                 Code = $TableName
+    #                 Description = $TableName
+    #                 CodeAndDescription = $TableName
+    #                 ActiveRaw = "Y"
+    #                 Active = $True
+    #         }
+    #     }
+    # }
+
     return $interfaceHeader
 }
 
@@ -1530,7 +1424,7 @@ function New-eSPDefinitionColumn {
     Param(
         [Parameter(Mandatory=$true)]$InterfaceID,
         [Parameter(Mandatory=$true)]$HeaderID,
-        [Parameter(Mandatory=$true)]$FieldId,
+        [Parameter(Mandatory=$true)][string]$FieldId, #must be a string.
         [Parameter(Mandatory=$true)]$FieldOrder,
         [Parameter(Mandatory=$true)]$TableName,
         [Parameter(Mandatory=$true)]$ColumnName,
@@ -1542,7 +1436,7 @@ function New-eSPDefinitionColumn {
         "Edit" = $null
         "InterfaceId" = $InterfaceID
         "HeaderId" = $HeaderID
-        "FieldId" = $FieldId
+        "FieldId" = "$FieldId"
         "FieldOrder" = $FieldOrder
         "TableName" = $TableName
         "TableAlias" = $null
@@ -1552,7 +1446,7 @@ function New-eSPDefinitionColumn {
         "FormatString" = $null
         "StartPosition" = $null
         "EndPosition" = $null
-        "FieldLength" = $FieldLength
+        "FieldLength" = "$FieldLength"
         "ValidationTable" = $null
         "CodeColumn" = $null
         "ValidationList" = $null
@@ -1567,4 +1461,220 @@ function New-eSPDefinitionColumn {
         "NewRow" = $True
         "InterfaceTranslations" = @("")
     }
+}
+
+function Get-eSPDefinitionsUpdates {
+
+    #ensure the configuration folder exists under this users local home.
+    if (-Not(Test-Path "$($HOME)\.config\eSchool")) {
+        New-Item "$($HOME)\.config\eSchool" -ItemType Directory -Force
+    }
+
+    Invoke-WebRequest -Uri "https://raw.githubusercontent.com/AR-k12code/eSchoolModule/main/resources/eSchoolDatabase.csv" -OutFile "$($HOME)\.config\eSchool\eSchoolDatabase.csv"
+
+}
+
+function New-eSPBulkDownloadDefinition {
+    Param(
+        [parameter(Mandatory=$true)][array]$Tables, #Which tables do you want to create a download definition for.
+        [Parameter(Mandatory=$true)][ValidateScript( { ($PSitem.Length) -eq 5} )]$InterfaceId,
+        [parameter(Mandatory=$false)][String]$AdditionalSQL = $null, #additional SQL
+        [parameter(Mandatory=$false)][Switch]$DoNotLimitSchoolYear, #otherwise all queries are limited to the current school year if the table has the SCHOOL_YEAR in it.
+        [parameter(Mandatory=$false)]$delimiter = ',',
+        [parameter(Mandatory=$false)][Switch]$Force #overwrite existing.
+    )
+
+    Assert-eSPSession
+
+    if ($AdditionalSQL) {
+        $sqlspecified = $True
+    }
+
+    $eSchoolDatabase = Get-ChildItem "$($HOME)\.config\eSchool\eSchoolDatabase.csv" -File
+
+    if (-Not($eSchoolDatabase)) {
+        Write-Error "Missing definitions. They must be downloaded first. Use Get-eSPDefinitionsUpdates first."
+        Throw "Missing definitions"
+    }
+
+    #Import-CSV ".\resources\eSchool Tables with SCHOOL_YEAR.csv" | Select-Object -ExpandProperty tblName
+    $tables_with_years = @("AR_CLASS_DOWN","AR_DOWN_ALE_DAYS","AR_DOWN_ATTEND","AR_DOWN_CAL","AR_DOWN_DISCIPLINE","AR_DOWN_DISTRICT","AR_DOWN_EC","AR_DOWN_EIS1","AR_DOWN_EIS2","AR_DOWN_EMPLOYEE",
+    "AR_DOWN_GRADUATE","AR_DOWN_HEARING","AR_DOWN_JOBASSIGN","AR_DOWN_REFERRAL","AR_DOWN_REGISTER","AR_DOWN_SCHL_AGE","AR_DOWN_SCHOOL","AR_DOWN_SCOLIOSIS","AR_DOWN_SE_STAFF","AR_DOWN_STU","AR_DOWN_STU_ID",
+    "AR_DOWN_STUDENT_GRADES","AR_DOWN_VISION","ARTB_SE_REFERRAL","ATT_AUDIT_TRAIL","ATT_BOTTOMLINE","ATT_CFG","ATT_CFG_CODES","ATT_CFG_MISS_SUB","ATT_CFG_PERIODS","ATT_CODE","ATT_CODE_BUILDING",
+    "ATT_CONFIG_PERCENT","ATT_HRM_SEATING","ATT_INTERVAL","ATT_LOCK_DATE","ATT_NOTIFY_CRIT","ATT_NOTIFY_CRIT_CD","ATT_NOTIFY_CRIT_PD","ATT_NOTIFY_ELIG_CD","ATT_NOTIFY_GROUP","ATT_NOTIFY_LANG",
+    "ATT_NOTIFY_STU_DET","ATT_NOTIFY_STU_HDR","ATT_PERIOD","ATT_STU_AT_RISK","ATT_STU_DAY_TOTALS","ATT_STU_ELIGIBLE","ATT_STU_HRM_SEAT","ATT_STU_INT_CRIT","ATT_STU_INT_GROUP","ATT_STU_INT_MEMB",
+    "ATT_TWS_TAKEN","ATT_VIEW_ABS","ATT_VIEW_CYC","ATT_VIEW_DET","ATT_VIEW_HDR","ATT_VIEW_INT","ATT_VIEW_MSE_BLDG","ATT_VIEW_PER","ATT_YREND_RUN","COTB_REPORT_PERIOD","CP_STU_FUTURE_REQ",
+    "DISC_ACT_USER","DISC_ATT_NOTIFY","DISC_INCIDENT","DISC_LINK_ISSUE","DISC_LTR_CRIT","DISC_LTR_CRIT_ACT","DISC_LTR_CRIT_ELIG","DISC_LTR_CRIT_OFF","DISC_LTR_DETAIL","DISC_LTR_HEADER","DISC_NOTES",
+    "DISC_OCCURRENCE","DISC_OFF_ACTION","DISC_OFF_CHARGE","DISC_OFF_CODE","DISC_OFF_CONVICT","DISC_OFF_DRUG","DISC_OFF_FINE","DISC_OFF_SUBCODE","DISC_OFF_WEAPON","DISC_OFFENDER","DISC_PRINT_CITATION",
+    "DISC_STU_AT_RISK","DISC_STU_ELIGIBLE","DISC_USER","DISC_VICTIM","DISC_VICTIM_ACTION","DISC_VICTIM_INJURY","DISC_WITNESS","DISC_YEAREND_RUN","FEE_GROUP_CRIT","FEE_GROUP_DET","FEE_GROUP_HDR",
+    "FEE_ITEM","FEE_STU_AUDIT","FEE_STU_GROUP","FEE_STU_ITEM","FEE_STU_PAYMENT","FEE_TEXTBOOK","FEE_TEXTBOOK_CRS","FEE_TEXTBOOK_TEA","FEE_YREND_RUN","FEETB_CATEGORY","FEETB_PAYMENT","FEETB_STU_STATUS",
+    "FEETB_SUB_CATEGORY","FEETB_UNIT_DESCR","ltdb_group_det","ltdb_group_hdr","LTDB_YEAREND_RUN","MD_ATTENDANCE_DOWN","MD_RUN","MD_SCGT_DOWN","MED_YEAREND_RUN","MR_AVERAGE_CALC","MR_AVERAGE_SETUP",
+    "MR_CLASS_SIZE","MR_CREDIT_SETUP","MR_CREDIT_SETUP_AB","MR_CREDIT_SETUP_GD","MR_CREDIT_SETUP_MK","MR_CRSEQU_DET","MR_CRSEQU_HDR","MR_CRSEQU_SETUP","MR_CRSEQU_SETUP_AB","MR_CRSEQU_SETUP_MK",
+    "MR_GB_ASMT_STU_COMP_ATTACH","MR_GB_CATEGORY_TYPE_DET","MR_GB_CATEGORY_TYPE_HDR","MR_GB_SCALE","MR_GB_SCALE_DET","MR_HONOR_ELIG_CD","MR_IMPORT_STU_CRS_HDR","MR_IPR_ELIG_CD","MR_IPR_PRINT_HDR",
+    "MR_IPR_RUN","MR_IPR_STU_AT_RISK","MR_IPR_STU_ELIGIBLE","MR_IPR_VIEW_ATT","MR_IPR_VIEW_ATT_IT","MR_IPR_VIEW_DET","MR_IPR_VIEW_HDR","MR_MARK_SUBS","MR_PRINT_HDR","MR_RC_STU_AT_RISK","MR_RC_STU_ATT_VIEW",
+    "MR_RC_STU_ELIGIBLE","MR_RC_VIEW_ALT_LANG","MR_RC_VIEW_ATT","MR_RC_VIEW_ATT_INT","MR_RC_VIEW_DET","MR_RC_VIEW_GPA","MR_RC_VIEW_GRD_SC","MR_RC_VIEW_HDR","MR_RC_VIEW_HONOR","MR_RC_VIEW_LTDB",
+    "MR_RC_VIEW_MPS","MR_RC_VIEW_SC_MP","MR_RC_VIEW_SP","MR_RC_VIEW_SP_COLS","MR_RC_VIEW_SP_MP","MR_RC_VIEW_STUCMP","MR_SC_COMP_COMS","MR_SC_COMP_CRS","MR_SC_COMP_DET","MR_SC_COMP_DET_ALT_LANG",
+    "MR_SC_COMP_HDR","MR_SC_COMP_MRKS","MR_SC_COMP_STU","MR_SC_ST_STANDARD","MR_SC_STU_COMMENT","MR_SC_STU_COMP","MR_SC_STU_CRS_COMM","MR_SC_STU_CRS_COMP","MR_SC_STU_TAKEN","MR_SC_STU_TEA",
+    "MR_SC_STU_TEA_XREF","MR_SC_STU_TEXT","MR_SC_STUSTU_TAKEN","MR_SC_TEA_COMP","MR_STATE_COURSES","MR_STU_COMMENTS","MR_STU_CRSEQU_ABS","MR_STU_CRSEQU_CRD","MR_STU_CRSEQU_MARK","MR_STU_GPA","MR_STU_HONOR",
+    "MR_STU_OUT_COURSE","MR_STU_TEXT","MR_STU_XFER_BLDGS","MR_STU_XFER_RUNS","MR_TRN_PRINT_HDR","MR_TRN_PRT_STU_BRK","MR_TRN_PRT_STU_DET","MR_TX_CREDIT_SETUP","MR_YEAREND_RUN","PP_MONTH_DAYS",
+    "PP_STUDENT_CACHE","PP_STUDENT_TEMP","REG_ACT_PREREQ","REG_ACTIVITY_ADV","REG_ACTIVITY_DET","REG_ACTIVITY_ELIG","REG_ACTIVITY_HDR","REG_ACTIVITY_INEL","REG_ACTIVITY_MP","REG_CAL_DAYS",
+    "REG_CAL_DAYS_LEARNING_LOC","REG_CALENDAR","REG_CFG","REG_CFG_ALERT","REG_CFG_ALERT_CODE","REG_CFG_ALERT_DEF_CRIT","REG_CFG_ALERT_DEFINED","REG_CFG_ALERT_UDS_CRIT_KTY","REG_CFG_ALERT_UDS_KTY",
+    "REG_CFG_ALERT_USER","REG_CFG_EW_APPLY","REG_CFG_EW_COMBO","REG_CFG_EW_COND","REG_CFG_EW_REQ_ENT","REG_CFG_EW_REQ_FLD","REG_CFG_EW_REQ_WD","REG_CFG_EW_REQUIRE","REG_CYCLE","REG_DISTRICT",
+    "REG_DURATION","REG_ENTRY_WITH","REG_EVENT_ACTIVITY","REG_GEO_PLAN_AREA","REG_GEO_ZONE_DATES","REG_GEO_ZONE_DET","REG_GEO_ZONE_HDR","REG_MP_DATES","REG_MP_WEEKS","REG_TRACK","REG_USER_PLAN_AREA",
+    "REG_YREND_RUN","REG_YREND_RUN_CAL","REG_YREND_RUN_CRIT","REG_YREND_STUDENTS","REGPROG_YREND_RUN","REGPROG_YREND_TABS","REGTB_SCHOOL_YEAR","SCHD_CFG","SCHD_CFG_DISC_OFF","SCHD_CFG_ELEM_AIN",
+    "SCHD_CFG_FOCUS_CRT","SCHD_CFG_HOUSETEAM","SCHD_CFG_HRM_AIN","SCHD_CFG_INTERVAL","SCHD_MS","SCHD_MS_SCHEDULE","SCHD_MSB_MEET_HDR","SCHD_PARAMS","SCHD_PARAMS_SORT","SCHD_PERIOD","SCHD_RUN",
+    "SCHD_SCAN_REQUEST","SCHD_STU_PREREQOVER","SCHD_STU_RECOMMEND","SCHD_STU_REQ","SCHD_STU_REQ_MP","SCHD_STU_STATUS","SCHD_TIMETABLE","SCHD_TIMETABLE_HDR","SCHD_UNSCANNED","SCHD_YREND_RUN",
+    "SEC_USER","SIF_GUID_ATT_CLASS","SIF_GUID_ATT_CODE","SIF_GUID_ATT_DAILY","SIF_GUID_CALENDAR_SUMMARY","SIF_GUID_REG_EW","SIF_GUID_TERM","SPI_CONFIG_EXTENSION_ENVIRONMENT","SSP_YEAREND_RUN",
+    "STATE_OCR_BLDG_CFG","STATE_OCR_BLDG_MARK_TYPE","STATE_OCR_BLDG_RET_EXCLUDED_CALENDAR","STATE_OCR_DETAIL","STATE_OCR_DIST_ATT","STATE_OCR_DIST_CFG","STATE_OCR_DIST_COM","STATE_OCR_DIST_DISC",
+    "STATE_OCR_DIST_EXP","STATE_OCR_DIST_LTDB_TEST","STATE_OCR_DIST_STU_DISC_XFER","STATE_OCR_NON_STU_DET","STATE_OCR_QUESTION","STATE_OCR_SUMMARY","Statetb_Ocr_Record_types","TAC_ISSUE",
+    "TAC_SEAT_HRM_DET","TAC_SEAT_HRM_HDR","TAC_SEAT_PER_DET","TAC_SEAT_PER_HDR")
+
+    $newDefinition = New-espDefinitionTemplate -InterfaceId "$InterfaceId" -Description "Bulk Table Export"
+    
+    $headerorder = 0
+    $tblShortNamesArray = @()
+
+    Import-Csv "$($HOME)\.config\eSchool\eSchoolDatabase.csv" | Where-Object { $tables -contains $PSItem.tblName } | Group-Object -Property tblName | ForEach-Object {
+        $tblName = $PSItem.Name
+        $sql_table = "LEFT OUTER JOIN (SELECT '#!#' AS 'RC_RUN') AS [spi_checklist_setup_hdr] ON 1=1 " + $AdditionalSQL #pull from global variable so we can modify local variable without pulling it back into the loop.
+
+        #We need to either APPEND or USE the SCHOOL_YEAR if the table has it.
+        if (-Not($DoNotLimitSchoolYear) -and ($tables_with_years -contains $tblName)) {
+            if ($sqlspecified) {
+                $sql_table += " AND SCHOOL_YEAR = (SELECT CASE WHEN MONTH(GetDate()) > 6 THEN YEAR(GetDate()) + 1 ELSE YEAR(GetDate()) END)"
+            } else {
+                $sql_table = "$($sql_table) WHERE SCHOOL_YEAR = (SELECT CASE WHEN MONTH(GetDate()) > 6 THEN YEAR(GetDate()) + 1 ELSE YEAR(GetDate()) END)"
+            }
+        }
+
+        #Get the name and generate a shorter name so its somewhat identifiable when getting errors.
+        if ($tblName.IndexOf('_') -ge 1) {
+            $tblShortName = $tblName[0]
+            $tblName | Select-String '_' -AllMatches | Select-Object -ExpandProperty Matches | ForEach-Object {
+                $tblShortName += $tblName[$PSItem.Index + 1]
+            }
+        } else {
+            $tblShortName = $tblName
+        }
+
+        if ($tblShortName.length -gt 5) {
+            $tblShortName = $tblShortName.SubString(0,5)
+        }
+
+        #We need to verify we don't already have an interface ID named the same thing. Stupid eSchool and its stupid 5 character limit.
+        if ($tblShortNamesArray -contains $tblShortName) {
+            $number = 0
+            do {
+                $number++
+                if ($tblShortName.length -ge 5) {
+                    $tblShortName = $tblShortName.SubString(0,4) + "$number"
+                } else {
+                    $tblShortName = $tblShortName + "$number"
+                }
+            } until ($tblShortNamesArray -notcontains $tblShortName)
+        }
+
+        $tblShortNamesArray += $tblShortName
+
+        $ifaceheader = $tblShortName
+        $description = $tblName
+        $filename = "$($tblName).csv"
+
+        Write-Verbose "$($ifaceheader),$($description),$($filename)"
+
+        $headerorder++
+
+        $newDefinition.UploadDownloadDefinition.InterfaceHeaders += New-eSPInterfaceHeader `
+            -InterfaceId $InterfaceId `
+            -HeaderId $ifaceheader `
+            -HeaderOrder $headerorder `
+            -FileName "$filename" `
+            -TableName "$($tblName.ToLower())" `
+            -Description "$description" `
+            -AdditionalSql "$($sql_table)" `
+            -Delimiter $delimiter
+    
+        $columns = @()
+        $columnNum = 1
+        $PSItem.Group | ForEach-Object {
+            $columns += New-eSPDefinitionColumn `
+                -InterfaceId "$InterfaceId" `
+                -HeaderId "$ifaceheader" `
+                -TableName "$($tblName.ToLower())" `
+                -FieldId "$columnNum" `
+                -FieldOrder $columnNum `
+                -ColumnName $PSItem.colName `
+                -FieldLength 255
+            $columnNum++
+        }
+
+        #add record delimiter
+        $columns += [ordered]@{
+            "Edit" = $null
+            "InterfaceId" = "$InterfaceId"
+            "HeaderId" = "$ifaceheader"
+            "FieldId" = "99"
+            "FieldOrder" = 99
+            "TableName" = "spi_checklist_setup_hdr"
+            "TableAlias" = $null
+            "ColumnName" = "RC_RUN"
+            "ScreenType" = $null
+            "ScreenNumber" = $null
+            "FormatString" = $null
+            "StartPosition" = $null
+            "EndPosition" = $null
+            "FieldLength" = "3"
+            "ValidationTable" = $null
+            "CodeColumn" = $null
+            "ValidationList" = $null
+            "ErrorMessage" = $null
+            "ExternalTable" = $null
+            "ExternalColumnIn" = $null
+            "ExternalColumnOut" = $null
+            "Literal" = $null
+            "ColumnOverride" = '#!#'
+            "Delete" = $False
+            "CanDelete" = $True
+            "NewRow" = $True
+            "InterfaceTranslations" = @("")
+        }
+
+        #$newDefinition
+        $newDefinition.UploadDownloadDefinition.InterfaceHeaders[$headerorder -1].InterfaceDetails = $columns
+
+    }
+
+    $jsonpayload = $newDefinition | ConvertTo-Json -Depth 99
+
+    Write-Verbose ($jsonpayload)
+
+    if ($Force) {
+        Remove-eSPInterfaceId -InterfaceId "$InterfaceId"
+    }
+
+    $response = Invoke-RestMethod -Uri "$($eSchoolSession.Url)/Utility/SaveUploadDownload" `
+        -WebSession $eSchoolSession.Session `
+        -Method "POST" `
+        -ContentType "application/json; charset=UTF-8" `
+        -Body $jsonpayload `
+        -MaximumRedirection 0
+
+    if ($response.PageState -eq 1) {
+        Write-Warning "Download Definition failed."
+        return [PSCustomObject]@{
+            'Tables' = $tables -join ','
+            'Status' = $False
+            'Message' = $($response.ValidationErrorMessages)
+        }
+    } elseif ($response.PageState -eq 2) {
+        Write-Host "Download definition created successfully. You can review it here: $($eSchoolSession.Url)/Utility/UploadDownload?interfaceId=$($InterfaceId)" -ForegroundColor Green
+        return [PSCustomObject]@{
+            'Tables' = $tables -join ','
+            'Status' = $True
+            'Message' = $response
+        }
+    } else {
+        throw "Failed."
+    }
+    
 }

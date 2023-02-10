@@ -1,0 +1,111 @@
+<select data-val="true" data-val-sgvalid="" data-sgvalid-isvalid="true" data-dropdown-auto-width="true" class="sg-list-field-table-key select2-offscreen form-control sg-select-box" data-allow-clear="true" data-val-sginvalidselections-values="[]" name="listFieldTableKey" data-format-result="SunGard.Bootstrap.DropDownList.FormatDescription" data-format-selection="SunGard.Bootstrap.DropDownList.FormatDescription" data-matcher="SunGard.Bootstrap.DropDownList.DescriptionMatcher" data-sg-sort-order="0" data-sort-results="SunGard.Bootstrap.DropDownList.SortMatchesFirst" data-sg-id-property="id" data-sg-text-property="text" data-sg-process-data-options="SunGard.Bootstrap.DropDownList.ProcessDataOptions" data-sg-process-invalid-selections="false" data-sg-invalid-value-option-text="" data-sg-clone-data="false" data-sg-always-add-invalid-values="false" id="listFieldTableKey" tabindex="-1" title="">
+	<option value="" selected="selected" data-table-name=""/>
+	<optgroup label="Areas">
+		<option value="v_custom_vision" data-table-name="v_custom_vision">Arkansas Custom Vision Exam</option>
+		<option value="mr_stu_hdr" data-table-name="mr_stu_hdr">Student Mark Reporting Course Header</option>
+		<option value="reg_travel" data-table-name="reg_travel">Travel</option>
+		<option value="reg_notes" data-table-name="reg_notes">Student Notes</option>
+		<option value="reg_academic" data-table-name="reg_academic">Academic</option>
+		<option value="artb_se_referral" data-table-name="artb_se_referral">Referral Tracking Information</option>
+		<option value="schd_stu_req" data-table-name="schd_stu_req">Student Requests</option>
+		<option value="reg_personal" data-table-name="reg_personal">Personal</option>
+		<option value="med_scoliosis" data-table-name="med_scoliosis">Scoliosis</option>
+		<option value="med_hearing" data-table-name="med_hearing">Hearing</option>
+		<option value="reg_stu_contact" data-table-name="reg_stu_contact">Student/Contact Relationships</option>
+		<option value="schd_stu_status" data-table-name="schd_stu_status">Schedule Status</option>
+		<option value="mr_stu_marks" data-table-name="mr_stu_marks">Student Mark Reporting Marks</option>
+		<option value="med_notes" data-table-name="med_notes">Medical Notes</option>
+		<option value="reg_contact_phone" data-table-name="reg_contact_phone">Contact Phones</option>
+		<option value="reg_next_year" data-table-name="reg_next_year">Next Year Demographic</option>
+		<option value="reg_ethnicity" data-table-name="reg_ethnicity">Student Ethnicities</option>
+		<option value="med_referral" data-table-name="med_referral">Referrals</option>
+		<option value="med_office" data-table-name="med_office">Office Visits</option>
+		<option value="reg_contact" data-table-name="reg_contact">Contacts</option>
+		<option value="med_series" data-table-name="med_series">Immunization Series</option>
+		<option value="med_vision" data-table-name="med_vision">Vision</option>
+		<option value="reg_med_alerts" data-table-name="reg_med_alerts">Medical Alerts</option>
+		<option value="reg_disability" data-table-name="reg_disability">Disabilities</option>
+		<option value="reg" data-table-name="reg">Demographic</option>
+		<option value="schd_ms" data-table-name="schd_ms">Master Schedule</option>
+		<option value="reg_stu_at_risk" data-table-name="reg_stu_at_risk">Student At Risk</option>
+		<option value="reg_legal_info" data-table-name="reg_legal_info">Legal/Birth Information</option>
+		<option value="med_general" data-table-name="med_general">Immunizations</option>
+		<option value="reg_activity_det" data-table-name="reg_activity_det">Activity Details</option>
+		<option value="med_physical" data-table-name="med_physical">Physical Exams</option>
+		<option value="reg_classification" data-table-name="reg_classification">Student Classifications</option>
+		<option value="med_growth" data-table-name="med_growth">Growth</option>
+		<option value="med_required" data-table-name="med_required">Medication Requirements</option>
+		<option value="reg_emergency" data-table-name="reg_emergency">Emergency</option>
+		<option value="med_issued" data-table-name="med_issued">Medication Log</option>
+		<option value="med_dental" data-table-name="med_dental">Dental</option>
+		<option value="med_vitals" data-table-name="med_vitals">Medical Vitals</option>
+		<option value="reg_summer_school" data-table-name="reg_summer_school">Summer School Demographics</option>
+		<option value="reg_entry_with" data-table-name="reg_entry_with">Entry/Withdrawal</option>
+		<option value="reg_med_procedure" data-table-name="reg_med_procedure">Medical Procedures</option>
+		<option value="med_office_det" data-table-name="med_office_det">Office Details</option>
+		<option value="reg_exclude_rank" data-table-name="reg_exclude_rank">Rank Exclusions</option>
+		<option value="med_shot" data-table-name="med_shot">Immunization Shots</option>
+		<option value="schd_stu_course" data-table-name="schd_stu_course">Student Schedules</option>
+		<option value="sec_v_global_id_contact" data-table-name="sec_v_global_id_contact">Student/Parent Global ID</option>
+		<option value="reg_exclude_honor" data-table-name="reg_exclude_honor">Honor Roll Exclusions</option>
+		<option value="reg_academic_supp" data-table-name="reg_academic_supp">Supplementary Requirement Group</option>
+		<option value="reg_user-R-5000" data-table-name="reg_user" data-screen-type="R" data-screen-number="5000">Early Childhood General Information</option>
+		<option value="reg_user-R-5090" data-table-name="reg_user" data-screen-type="R" data-screen-number="5090">School Age Student</option>
+		<option value="reg_user-R-1500" data-table-name="reg_user" data-screen-type="R" data-screen-number="1500">School for the Deaf Information</option>
+		<option value="reg_user-R-102" data-table-name="reg_user" data-screen-type="R" data-screen-number="102">SIS/Misc Items</option>
+		<option value="reg_user-R-5020" data-table-name="reg_user" data-screen-type="R" data-screen-number="5020">Early Childhood Anticipated Services</option>
+		<option value="reg_user-R-5030" data-table-name="reg_user" data-screen-type="R" data-screen-number="5030">Early Childhood Development Needs</option>
+		<option value="reg_user-R-5040" data-table-name="reg_user" data-screen-type="R" data-screen-number="5040">Early Childhood Related Services</option>
+		<option value="reg_user-R-105" data-table-name="reg_user" data-screen-type="R" data-screen-number="105">ELL</option>
+		<option value="reg_user-R-5120" data-table-name="reg_user" data-screen-type="R" data-screen-number="5120">School Age Anticipated Services</option>
+		<option value="reg_user-R-5130" data-table-name="reg_user" data-screen-type="R" data-screen-number="5130">School Age Educational Needs Information</option>
+		<option value="reg_user-R-5140" data-table-name="reg_user" data-screen-type="R" data-screen-number="5140">School Age Related Services Information</option>
+		<option value="reg_user-R-5150" data-table-name="reg_user" data-screen-type="R" data-screen-number="5150">School Age Evaluations Information</option>
+		<option value="reg_user-R-5050" data-table-name="reg_user" data-screen-type="R" data-screen-number="5050">Coordinated Early Intervening General Information</option>
+		<option value="reg_user-R-101" data-table-name="reg_user" data-screen-type="R" data-screen-number="101">Student Workplace &amp; Vehicle Info</option>
+		<option value="reg_user-R-999" data-table-name="reg_user" data-screen-type="R" data-screen-number="999">SSN Correction</option>
+		<option value="reg_user-R-106" data-table-name="reg_user" data-screen-type="R" data-screen-number="106">AR Seal of Biliteracy</option>
+		<option value="reg_user-R-1000" data-table-name="reg_user" data-screen-type="R" data-screen-number="1000">DO NOT USE (Previously Pull-Out Teachers)</option>
+		<option value="reg_user-R-5070" data-table-name="reg_user" data-screen-type="R" data-screen-number="5070">Coordinated Early Intervening Service Types</option>
+		<option value="reg_user-R-29000" data-table-name="reg_user" data-screen-type="R" data-screen-number="29000">Learning Location</option>
+	</optgroup>
+	<optgroup label="Programs">
+		<option value="reg_programs-arell" data-table-name="reg_programs" data-program-id="ARELL">ELL Entry/Exit</option>
+		<option value="reg_programs-arses" data-table-name="reg_programs" data-program-id="ARSES">Meal Status</option>
+		<option value="reg_programs-arcur" data-table-name="reg_programs" data-program-id="ARCUR">Curriculum</option>
+		<option value="reg_programs-argt" data-table-name="reg_programs" data-program-id="ARGT">Gifted/Talented</option>
+		<option value="reg_programs-artrn" data-table-name="reg_programs" data-program-id="ARTRN">Transported</option>
+		<option value="reg_programs-arrs" data-table-name="reg_programs" data-program-id="ARRS">Residency</option>
+		<option value="reg_programs-ar_ec" data-table-name="reg_programs" data-program-id="AR_EC">Early Childhood Program</option>
+		<option value="reg_programs-ar_sa" data-table-name="reg_programs" data-program-id="AR_SA">School Age Program</option>
+		<option value="reg_programs-ar_ei" data-table-name="reg_programs" data-program-id="AR_EI">Coordinated Early Intervening Services Program</option>
+		<option value="reg_programs-ps-ll" data-table-name="reg_programs" data-program-id="PS-LL">Learning Location</option>
+	</optgroup>
+</select>
+<select data-val="true" data-val-sgvalid="" data-sgvalid-isvalid="true" data-dropdown-auto-width="true" class="sg-list-field-column-key select2-offscreen form-control sg-select-box" data-allow-clear="true" data-val-sginvalidselections-values="[]" name="listFieldColumnName" data-format-result="SunGard.Bootstrap.DropDownList.FormatDescription" data-format-selection="SunGard.Bootstrap.DropDownList.FormatDescription" data-matcher="SunGard.Bootstrap.DropDownList.DescriptionMatcher" data-sg-sort-order="0" data-sort-results="SunGard.Bootstrap.DropDownList.SortMatchesFirst" data-sg-id-property="id" data-sg-text-property="text" data-sg-process-data-options="SunGard.Bootstrap.DropDownList.ProcessDataOptions" data-sg-process-invalid-selections="false" data-sg-invalid-value-option-text="" data-sg-clone-data="false" data-sg-always-add-invalid-values="false" id="listFieldColumnName" tabindex="-1" title="">
+	<option value="" selected="selected"/>
+	<option value="reg_academic.pending_grad_plan">Pending Grad Plan</option>
+	<option value="reg_academic.change_uid">Change Uid</option>
+	<option value="reg_academic.curriculum">Curriculum</option>
+	<option value="reg_academic.diploma_type">Diploma Type</option>
+	<option value="reg_academic.modeled_grad_plan">Modeled Grad Plan</option>
+	<option value="reg_academic.advisor">Advisor</option>
+	<option value="reg_academic.act_grad_plan">Actual Graduation Plan</option>
+	<option value="reg_academic.elig_expires_date">Eligibility Restriction Date</option>
+	<option value="reg_academic.change_date_time">Change Date Time</option>
+	<option value="reg_academic.federal_grad_year">Federal Grad Year</option>
+	<option value="reg_academic.promotion">Promotion</option>
+	<option value="reg_academic.elig_effective_dte">Eligibility Effective Date</option>
+	<option value="reg_academic.votec">VoTec</option>
+	<option value="reg_academic.graduation_year">Graduation Year</option>
+	<option value="reg_academic.student_id">Student Id</option>
+	<option value="reg_academic.schd_priority">Scheduling Priority</option>
+	<option value="reg_academic.elig_status">Elig Status</option>
+	<option value="reg_academic.rc_hold_override">Rc Hold Override</option>
+	<option value="reg_academic.hold_report_card">Report Card on Hold</option>
+	<option value="reg_academic.elig_reason">Elig Reason</option>
+	<option value="reg_academic.graduation_date">Graduation Date</option>
+	<option value="reg_academic.disciplinarian">Disciplinarian</option>
+	<option value="reg_academic.graduate_req_group">Graduation Req Group</option>
+	<option value="reg_academic.exp_grad_plan">Expected Graduation Plan</option>
+</select>

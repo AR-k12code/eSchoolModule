@@ -261,8 +261,14 @@ function Assert-eSPSession {
         #even if this is null it won't fail.
         $tasks = Invoke-RestMethod -Uri "$($eschoolSession.Url)/Task/TaskAndReportData?includeTaskCount=true&includeReports=false&maximumNumberOfReports=1&includeTasks=true&runningTasksOnly=false" -MaximumRedirection 0 -WebSession $eschoolSession.session
     } catch {
-        $params = $eschoolSession.Params
-        Connect-ToeSchool @params
+        if ($eschoolSession) {
+            #session exists but has probably timed out. Reuse parameters.
+            $params = $eschoolSession.Params
+            Connect-ToeSchool @params
+        } else {
+            #new session using default profile.
+            Connect-ToeSchool
+        }
     }
 }
 function Get-eSPFileList {
@@ -385,6 +391,8 @@ function Invoke-eSPDownloadDefinition {
 
     Assert-eSPSession
 
+    $dateTime = Get-Date
+
     $params = [ordered]@{
         'SearchType' = 'download_filter'
         'SortType' = ''
@@ -405,7 +413,7 @@ function Invoke-eSPDownloadDefinition {
         'SortFields.SearchType' = 'download_filter'
         'SortFields.SearchNumber' = '0'
         'TaskScheduler.CurrentTask.ScheduleType' = 'O'
-        'TaskScheduler.CurrentTask.ScheduledTimeTime' = (Get-Date).ToString("hh:mm tt") #(Get-Date).AddMinutes(1).ToString("hh:mm tt")
+        'TaskScheduler.CurrentTask.ScheduledTimeTime' = $dateTime.ToString("hh:mm tt") #(Get-Date).AddMinutes(1).ToString("hh:mm tt")
         'TaskScheduler.CurrentTask.ScheduledTimeDate' = Get-Date -UFormat %m/%d/%Y
         'TaskScheduler.CurrentTask.SchdInterval' = '1'
         'TaskScheduler.CurrentTask.Monday' = 'false'
@@ -447,13 +455,43 @@ function Invoke-eSPDownloadDefinition {
 
             do {
 
-                $response2 = Get-eSPTaskList
+                $tasks = Get-eSPTaskList -SilentErrors
 
-                if ($response2.InActiveTasks.TaskName -contains $InterfaceID) {
+                if ($tasks.InActiveTasks | 
+                    Where-Object { $PSitem.TaskName -eq $InterfaceID -and 
+                        (
+                            #within 1 min either direction. More than that and you're probably doing something wrong.
+                            ($dateTime.AddMinutes(-1) -le (Get-Date "$($PSitem.RunTime)")) -and
+                            ($dateTime.AddMinutes(1) -ge (Get-Date "$($PSitem.RunTime)"))
+                        )
+                     }) {
                     #still waiting to run.
-                    Write-Verbose "Waiting to run task."
-                } elseif ($response2.ActiveTasks.TaskName -contains $InterfaceID) {
+                    Write-Verbose "Waiting for task to run."
+                } elseif ($task = $tasks.ActiveTasks | 
+                    Where-Object { $PSitem.TaskName -eq $InterfaceID -and 
+                        (
+                            #within 1 min either direction. More than that and you're probably doing something wrong.
+                            ($dateTime.AddMinutes(-1) -le (Get-Date "$($PSitem.RunTime)")) -and
+                            ($dateTime.AddMinutes(1) -ge (Get-Date "$($PSitem.RunTime)"))
+                        )
+                    }) {
+                    
                     Write-Verbose "Task is currently running."
+                    
+                    if ($task.ErrorOccurred -eq 'True') {
+                        #Write-Error "Failed to run task."
+                        Throw "Failed to run task"
+                    }
+
+                    #$progressSplit = $task.ProgressDescription | Select-String -Pattern "\((\d+) of (\d+)\)" | Select-Object -ExpandProperty Matches | Select-Object -ExpandProperty Groups
+                    try {
+                        $percentage = [math]::Floor( ($($task.RecordsProcessed)/$($task.TotalRecords) * 100) )
+                        #$percentage = [math]::Floor( ($($progressSplit[1].Value)/$($progressSplit[2].Value) * 100) )
+                        if ($percentage) {
+                            Write-Progress -Activity "Processing $($task.TaskName)" -Status "$($task.ProgressDescription)" -PercentComplete $percentage
+                        }
+                    } catch { <# do nothing #> }
+
                 } else {
                     $complete = $true
                 }
@@ -590,7 +628,8 @@ function Get-eSPTaskList {
 
     Param(
         [parameter(Mandatory = $false)][switch]$ActiveTasksOnly,
-        [parameter(Mandatory = $false)][switch]$ErrorsOnly
+        [parameter(Mandatory = $false)][switch]$ErrorsOnly,
+        [parameter(Mandatory = $false)][switch]$SilentErrors
     )
 
     Assert-eSPSession
@@ -604,9 +643,8 @@ function Get-eSPTaskList {
 
     #Return errored reports.
     if ($ErrorsOnly) {
-        return ($erroredTasks | 
-            Select-Object -Property TaskKey,TaskName,ProgressDescription,ErrorOccurred,RunTime,@{ Name = "TaskError"; Expression = { $PSItem.TaskError.ScheduledTaskErrorDescription } })
-    } else {
+        return $erroredTasks
+    } elseif (-Not($SilentErrors)) {
         if ($erroredTasks) {
            #print to terminal
             Write-Warning "You have failed tasks in your task list."
@@ -873,3 +911,648 @@ function Get-eSPStudentDetails {
 
 }
 
+function New-eSPEmailDefinitions {
+    <#
+
+    .SYNOPSIS
+    This function will create the Upload and Download Definitions used to fix upload definitions.
+    Download Definition : EMLDL,Upload Definition : EMLUP
+
+    #>
+
+    <# 
+
+    Download Definition
+
+    #>
+
+    Param(
+        [Parameter(Mandatory=$false)][switch]$Force
+    )
+
+    $dd = [ordered]@{
+        "IsCopyNew" = "False"
+        "NewHeaderNames" = @("") #can not be an empty array.
+        "InterfaceHeadersToCopy" = @("") #can not be an empty array.
+        "InterfaceToCopyFrom" = @("") #can not be an empty array.
+        "CopyHeaders" = "False"
+        "PageEditMode" = 0
+        "UploadDownloadDefinition" = @{
+            "UploadDownload" = "D"
+            "DistrictId" = 0
+            "InterfaceId" = "EMLDL"
+            "Description" = "Automated Student Email Download Definition"
+            "UploadDownloadRaw" = "D"
+            "ChangeUser" = $null
+            "DeleteEntity" = $False
+            "InterfaceHeaders" = @(
+
+                [ordered]@{
+                    "InterfaceId" = "EMLDL"
+                    "HeaderId" = "1"
+                    "HeaderOrder" = 1
+                    "Description" = "Students Student ID Email and Contact ID"
+                    "FileName" = "student_email_download.csv"
+                    "LastRunDate" = $null
+                    "DelimitChar" = ","
+                    "UseChangeFlag" = $False
+                    "TableAffected" = "reg_contact"
+                    "AdditionalSql" = "INNER JOIN reg_stu_contact ON reg_stu_contact.contact_id = reg_contact.contact_id INNER JOIN reg ON reg.student_id = reg_stu_contact.student_id"
+                    "ColumnHeaders" = $True
+                    "Delete" = $False
+                    "CanDelete" = $True
+                    "ColumnHeadersRaw" = "Y"
+                    "InterfaceDetails" = @()
+                }
+
+            )
+        }        
+    
+    }
+
+    $rows = @(
+        @{ table = "reg"; column = "STUDENT_ID"; length = 20 },
+        @{ table = "reg_contact"; column = "CONTACT_ID"; length = 20 },
+        @{ table = "reg_contact"; column = "EMAIL"; length = 250 },
+        @{ table = "reg_stu_contact"; column = "WEB_ACCESS"; length = 1 },
+        @{ table = "reg_stu_contact"; column = "CONTACT_PRIORITY"; length = 2 },
+        @{ table = "reg_stu_contact"; column = "CONTACT_TYPE"; length = 1 }
+    )
+
+    $columns = @()
+    $columnNum = 1
+    $rows | ForEach-Object {
+        $columns += [ordered]@{
+            "Edit" = $null
+            "InterfaceId" = "EMLDL"
+            "HeaderId" = "1"
+            "FieldId" = "$columnNum"
+            "FieldOrder" = $columnNum
+            "TableName" = $PSItem.table
+            "TableAlias" = $null
+            "ColumnName" = $PSItem.column
+            "ScreenType" = $null
+            "ScreenNumber" = $null
+            "FormatString" = $null
+            "StartPosition" = $null
+            "EndPosition" = $null
+            "FieldLength" = "$($PSItem.length)"
+            "ValidationTable" = $null
+            "CodeColumn" = $null
+            "ValidationList" = $null
+            "ErrorMessage" = $null
+            "ExternalTable" = $null
+            "ExternalColumnIn" = $null
+            "ExternalColumnOut" = $null
+            "Literal" = $null
+            "ColumnOverride" = $null
+            "Delete" = $False
+            "CanDelete" = $True
+            "NewRow" = $True
+            "InterfaceTranslations" = @("") #can not be an empty array.
+        }
+        $columnNum++
+    }
+
+    $dd.UploadDownloadDefinition.InterfaceHeaders[0].InterfaceDetails = $columns
+
+    $jsonpayload = $dd | ConvertTo-Json -depth 6
+
+    Write-Verbose ($jsonpayload)
+ 
+    #attempt to delete existing if its there already
+    Remove-eSPInterfaceId -InterfaceId "EMLDL"
+
+    $response = Invoke-RestMethod -Uri "$($eSchoolSession.Url)/Utility/SaveUploadDownload" `
+        -WebSession $eSchoolSession.Session `
+        -Method "POST" `
+        -ContentType "application/json; charset=UTF-8" `
+        -Body $jsonpayload -MaximumRedirection 0
+
+    <#
+        Upload Definition
+    #>
+
+    $ud = [ordered]@{
+        IsCopyNew = "False"
+        NewHeaderNames = @("")
+        InterfaceHeadersToCopy = @("")
+        InterfaceToCopyFrom = @("")
+        CopyHeaders = "False"
+        PageEditMode = 0
+        UploadDownloadDefinition = [ordered]@{
+            UploadDownload = "U"
+            DistrictId = 0
+            InterfaceId = "EMLUP"
+            Description = "Automated Student Email Upload Definition"
+            UploadDownloadRaw = "U"
+            ChangeUser = $null
+            DeleteEntity = $False
+            InterfaceHeaders = @(
+                [ordered]@{
+                    InterfaceId = "EMLUP"
+                    HeaderId = "1"
+                    HeaderOrder = 1
+                    Description = "Students Student ID Email and Contact ID"
+                    FileName = "student_email_upload.csv"
+                    LastRunDate = $null
+                    DelimitChar = ","
+                    UseChangeFlag = $False
+                    TableAffected = "reg_contact"
+                    AdditionalSql = $null
+                    ColumnHeaders = $True
+                    Delete = $False
+                    CanDelete = $True
+                    ColumnHeadersRaw = "Y"
+                    InterfaceDetails = @()
+                    AffectedTableObject = [ordered]@{
+                        Code = "reg_contact"
+                        Description = "Contacts"
+                        CodeAndDescription = "reg_contact - Contacts"
+                        ActiveRaw = "Y"
+                        Active = $True
+                    }
+                }
+            )
+        }
+    }
+
+    $rows = @(
+        @{ table = "reg_contact"; column = "CONTACT_ID"; length = 20 },
+        @{ table = "reg_contact"; column = "EMAIL"; length = 250 }
+    )
+
+    $columns = @()
+    $columnNum = 1
+    $rows | ForEach-Object {
+        $columns += [ordered]@{
+            "Edit" = $null
+            "InterfaceId" = "EMLUP"
+            "HeaderId" = "1"
+            "FieldId" = "$columnNum"
+            "FieldOrder" = $columnNum
+            "TableName" = $PSItem.table
+            "TableAlias" = $null
+            "ColumnName" = $PSItem.column
+            "ScreenType" = $null
+            "ScreenNumber" = $null
+            "FormatString" = $null
+            "StartPosition" = $null
+            "EndPosition" = $null
+            "FieldLength" = "$($PSItem.length)"
+            "ValidationTable" = $null
+            "CodeColumn" = $null
+            "ValidationList" = $null
+            "ErrorMessage" = $null
+            "ExternalTable" = $null
+            "ExternalColumnIn" = $null
+            "ExternalColumnOut" = $null
+            "Literal" = $null
+            "ColumnOverride" = $null
+            "Delete" = $False
+            "CanDelete" = $True
+            "NewRow" = $True
+            "InterfaceTranslations" = @("") #can not be an empty array.
+        }
+        $columnNum++
+    }
+
+    $ud.UploadDownloadDefinition.InterfaceHeaders[0].InterfaceDetails = $columns
+
+    $jsonpayload = $ud | ConvertTo-Json -depth 6
+
+    Write-Verbose ($jsonpayload)
+ 
+    #attempt to delete existing if its there already
+    Remove-eSPInterfaceId -InterfaceId "EMLUP"
+
+    $response2 = Invoke-RestMethod -Uri "$($eSchoolSession.Url)/Utility/SaveUploadDownload" `
+        -WebSession $eSchoolSession.Session `
+        -Method "POST" `
+        -ContentType "application/json; charset=UTF-8" `
+        -Body $jsonpayload -MaximumRedirection 0
+
+
+    <#
+        Web Access Upload Definition.
+    #>
+
+    $wa = @{
+        IsCopyNew = "False"
+        NewHeaderNames = @("")
+        InterfaceHeadersToCopy = @("")
+        InterfaceToCopyFrom = @("")
+        CopyHeaders = "False"
+        PageEditMode = 0
+        UploadDownloadDefinition = @{
+            UploadDownload = "U"
+            DistrictId = 0
+            InterfaceId = "EMLAC"
+            Description = "Automated Student Web Access Upload Definition"
+            UploadDownloadRaw = "U"
+            ChangeUser = $null
+            DeleteEntity = $False
+            InterfaceHeaders = @(
+                @{
+                    InterfaceId = "EMLAC"
+                    HeaderId = "1"
+                    HeaderOrder = 1
+                    Description = "Students Contact ID and WEB_ACCESS"
+                    FileName = "webaccess_upload.csv"
+                    LastRunDate = $null
+                    DelimitChar = ","
+                    UseChangeFlag = $False
+                    TableAffected = "reg_stu_contact"
+                    AdditionalSql = $null
+                    ColumnHeaders = $True
+                    Delete = $False
+                    CanDelete = $True
+                    ColumnHeadersRaw = "Y"
+                    InterfaceDetails = @()
+                    AffectedTableObject = @{
+                        Code = "reg_stu_contact"
+                        Description = "Contacts"
+                        CodeAndDescription = "reg_stu_contact - Contacts"
+                        ActiveRaw = "Y"
+                        Active = $True
+                    }
+                }
+            )
+
+        }
+    }
+
+    $rows = @(
+        @{ table = "reg_stu_contact"; column = "CONTACT_ID"; length = 20 },
+        @{ table = "reg_stu_contact"; column = "STUDENT_ID"; length = 20 },
+        @{ table = "reg_stu_contact"; column = "WEB_ACCESS"; length = 1 },
+        @{ table = "reg_stu_contact"; column = "CONTACT_TYPE"; length = 1 }
+    )
+
+    $columns = @()
+    $columnNum = 1
+    $rows | ForEach-Object {
+        $columns += [ordered]@{
+            "Edit" = $null
+            "InterfaceId" = "EMLAC"
+            "HeaderId" = "1"
+            "FieldId" = "$columnNum"
+            "FieldOrder" = $columnNum
+            "TableName" = $PSItem.table
+            "TableAlias" = $null
+            "ColumnName" = $PSItem.column
+            "ScreenType" = $null
+            "ScreenNumber" = $null
+            "FormatString" = $null
+            "StartPosition" = $null
+            "EndPosition" = $null
+            "FieldLength" = "$($PSItem.length)"
+            "ValidationTable" = $null
+            "CodeColumn" = $null
+            "ValidationList" = $null
+            "ErrorMessage" = $null
+            "ExternalTable" = $null
+            "ExternalColumnIn" = $null
+            "ExternalColumnOut" = $null
+            "Literal" = $null
+            "ColumnOverride" = $null
+            "Delete" = $False
+            "CanDelete" = $True
+            "NewRow" = $True
+            "InterfaceTranslations" = @("") #can not be an empty array.
+        }
+        $columnNum++
+    }
+
+    $wa.UploadDownloadDefinition.InterfaceHeaders[0].InterfaceDetails = $columns
+    
+    $jsonpayload = $wa | ConvertTo-Json -depth 6
+
+    Write-Verbose ($jsonpayload)
+ 
+    #attempt to delete existing if its there already
+    Remove-eSPInterfaceId -InterfaceId "EMLAC"
+
+    $response2 = Invoke-RestMethod -Uri "$($eSchoolSession.Url)/Utility/SaveUploadDownload" `
+        -WebSession $eSchoolSession.Session `
+        -Method "POST" `
+        -ContentType "application/json; charset=UTF-8" `
+        -Body $jsonpayload -MaximumRedirection 0
+
+
+}
+
+function New-eSPDefinition {
+    Param(
+        [Parameter(Mandatory=$true)]$Definition
+    )
+
+    $jsonpayload = $Definition | ConvertTo-Json -depth 6
+
+    Write-Verbose ($jsonpayload)
+ 
+    #attempt to delete existing if its there already
+    Remove-eSPInterfaceId -InterfaceId $($Definition.UploadDownloadDefinition.InterfaceId)
+
+    $response = Invoke-RestMethod -Uri "$($eSchoolSession.Url)/Utility/SaveUploadDownload" `
+        -WebSession $eSchoolSession.Session `
+        -Method "POST" `
+        -ContentType "application/json; charset=UTF-8" `
+        -Body $jsonpayload -MaximumRedirection 0
+
+}
+
+function Remove-eSPInterfaceId {
+
+    Param(
+        [parameter(mandatory=$true)]$InterfaceID
+    )
+
+    $districtId = Invoke-eSPExecuteSearch -SearchType UPLOADDEF | Select-Object -ExpandProperty district -First 1
+
+    $params = [ordered]@{
+        SearchType = "UPLOADDEF"
+        Columns = @()
+        Deleted = @(
+            @{ 
+                Keys = @(
+                    @{
+                        Key = "district"
+                        Value = $districtId
+                    },
+                    @{
+                        Key = "interface_id"
+                        Value = $InterfaceID
+                    }
+                )
+            }
+        )
+    }
+
+}
+
+function Invoke-eSPExecuteSearch {
+    <#
+    
+    .SYNOPSIS
+    Execute a Search in eSchool and return structured data.
+    
+    #>
+
+    Param(
+        [parameter(Mandatory=$true)][ValidateSet("REGMAINT","UPLOADDEF","DUPLICATECONTACT")][string]$SearchType,
+        [parameter(Mandatory=$false)]$SearchParams,
+        [parameter(Mandatory=$false)]$pageSize = 250
+    )
+
+    Assert-eSPSession
+
+    $results = [System.Collections.Generic.List[Object]]::new()
+
+    #I have tried actually doing the arrays on the Filter and Predicate but it doesn't convert to x-www-form-urlencoded correctly for the index numbers.
+    $params = [ordered]@{
+        'loginId' = $eSchoolSession.Username
+        'searchType' = $SearchType 
+        'searchNumber' = 0
+        'runAsUserId' = $eSchoolSession.Username
+        'ListFields.LoginId' = $eSchoolSession.Username
+        'ListFields.SearchType' = $SearchType
+        'ListFields.SearchNumber' = 0
+        # 'SortFields.LoginId' = $eSchoolSession.Username
+        # 'SortFields.SearchType' = $SearchType
+        # 'SortFields.SearchNumber' = 0
+        'Filter.LoginId' = $eSchoolSession.Username
+        'Filter.SearchType' = $SearchType
+        'Filter.SearchNumber' = 0
+    }
+
+    if ($searchParams) {
+        $SearchParams | ForEach-Object {
+            $params = $params + $PSItem
+        }
+    }
+
+    Write-Verbose ($params | ConvertTo-Json)
+
+    $executeSearch = Invoke-WebRequest -Uri "$($eSchoolSession.Url)/Search/ExecuteSearch" `
+    -Method "POST" `
+    -WebSession $eSchoolSession.session `
+    -ContentType "application/x-www-form-urlencoded; charset=UTF-8" `
+    -Body $params
+   
+    $searchResults = Invoke-RestMethod -Uri "$($eSchoolSession.Url)/Search/GetSearchResults?searchType=$($SearchType)&SearchNumber=0" `
+        -Method "POST" `
+        -WebSession $eSchoolSession.Session `
+        -ContentType "application/x-www-form-urlencoded; charset=UTF-8" `
+        -Body @{
+                '_search' = 'false'
+                'nd' = [System.DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
+                'rows' = $pageSize
+                'page' = 1
+                'sidx' = $null
+                'sord' = "asc"
+            }
+
+    $pages = $searchResults.Total
+    $rows = $searchResults.records
+
+    Write-Verbose "Total Records: $rows; Total Pages: $pages"
+
+    for ($i = 1; $i -le $pages; $i++) {
+
+        Write-Verbose "Retrieving page $i of $pages"
+        Write-Progress -Activity "Retrieving" -Status "$i of $pages" -PercentComplete ([Math]::Floor( (($i / $pages) * 100) ))
+
+        $response = Invoke-RestMethod -Uri "$($eSchoolSession.Url)/Search/GetSearchResults?searchType=$($SearchType)&SearchNumber=0" `
+            -Method "POST" `
+            -WebSession $eSchoolSession.Session `
+            -ContentType "application/x-www-form-urlencoded; charset=UTF-8" `
+            -Body @{
+                '_search' = 'false'
+                'nd' = [System.DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
+                'rows' = $pageSize
+                'page' = $i
+                'sidx' = $null
+                'sord' = "asc"
+            }
+
+        $columns = $response.rows | Get-Member | Where-Object { $PSitem.MemberType -eq "NoteProperty" -and $PSitem.Name -like "Column*" } | Select-Object -ExpandProperty Name
+
+        $response.rows | ForEach-Object {
+
+            $row = $PSitem
+            $rowObject = [PSCustomObject]@{}
+
+            #for the number of columns we need to add them to a new object.
+            $columns | ForEach-Object {
+                $Column = $PSitem
+                $ColumnName = ($row.$Column).ColumnName ? ($row.$Column).ColumnName : $Column
+                $ColumnValue = [System.Web.HttpUtility]::HtmlDecode( (($row.$Column).RawValue).Trim() ) # ? ($PSitem.$Column).RawValue : $null
+                $rowObject | Add-Member -NotePropertyName "$($ColumnName)" -NotePropertyValue "$($ColumnValue)" -ErrorAction SilentlyContinue
+            }
+
+            $results.Add($rowObject)
+        }
+
+    }
+
+    return $results
+
+}
+
+function New-eSPSearchPredicate {
+
+    Param(
+        [Parameter(Mandatory=$true)]$index = 0,
+        [Parameter(Mandatory=$true)]$TableName,
+        [Parameter(Mandatory=$true)]$ColumnName,
+        [Parameter(Mandatory=$true)][ValidateSet("Equal","In")]$Operator = 'Equal',
+        [Parameter(Mandatory=$true)][ValidateSet("Char","VarChar","Int")]$DataType = "VarChar",
+        [Parameter(Mandatory=$true)]$Values
+    )
+
+    return [ordered]@{
+        "Filter.Predicates[$index].LogicalOperator" = "And"
+        "Filter.Predicates[$index].TableName" = $TableName
+        "Filter.Predicates[$index].ColumnName" = $ColumnName
+        "Filter.Predicates[$index].Operator" = $Operator
+        "Filter.Predicates[$index].DataType" = $DataType
+        "Filter.Predicates[$index].ScreenType" = ""
+        "Filter.Predicates[$index].ScreenNumber" = ""
+        "Filter.Predicates[$index].FieldNumber" = ""
+        "Filter.Predicates[$index].Values" = $Values
+        "Filter.Predicates[$index].ValuesCheckAll" = "false"
+    }
+}
+
+function New-eSPSearchListField {
+
+    Param(
+        [Parameter(Mandatory=$true)]$index = 0,
+        [Parameter(Mandatory=$true)]$TableName,
+        [Parameter(Mandatory=$true)]$ColumnName
+    )
+
+    return [ordered]@{
+        "ListFields.Fields[$index].ListFieldIndex" = ($index + 1)
+        "ListFields.Fields[$index].TableName" = $TableName
+        "ListFields.Fields[$index].ColumnName" = $ColumnName
+    }
+}
+
+function New-eSPDefinitionTemplate {
+
+    Param(
+        [Parameter(Mandatory=$false)][ValidateSet("Download","Upload")]$DefintionType = "Download",
+        [Parameter(Mandatory=$true)][ValidateScript( { ($PSitem.Length) -eq 5} )]$InterfaceId,
+        [Parameter(Mandatory=$false)]$Description = "eSchoolModule Definition"
+
+    )
+
+    
+    $definition = [ordered]@{
+        IsCopyNew = "False"
+        NewHeaderNames = @("")
+        InterfaceHeadersToCopy = @("")
+        InterfaceToCopyFrom = @("")
+        CopyHeaders = "False"
+        PageEditMode = 0
+        UploadDownloadDefinition = @{
+            UploadDownload = $DefintionType -eq "Download" ? "D" : "U"
+            DistrictId = 0
+            InterfaceId = $InterfaceId
+            Description = $Description
+            UploadDownloadRaw = $DefintionType -eq "Download" ? "D" : "U"
+            ChangeUser = $null
+            DeleteEntity = $False
+            InterfaceHeaders = @() #New-eSPInterfaceHeader
+        }
+    }
+
+    return $definition
+
+}
+
+function New-eSPInterfaceHeader {
+
+    Param(
+        [Parameter(Mandatory=$true)][ValidateScript( { ($PSitem.Length) -eq 5} )]$InterfaceId,
+        [Parameter(Mandatory=$true)]$HeaderId,
+        [Parameter(Mandatory=$true)]$HeaderOrder,
+        [Parameter(Mandatory=$false)]$Description,
+        [Parameter(Mandatory=$true)]$FileName,
+        [Parameter(Mandatory=$true)]$TableName,
+        [Parameter(Mandatory=$false)]$AdditionalSql = ""
+    )
+
+    $interfaceHeader = [ordered]@{
+        InterfaceId = $InterfaceID
+        HeaderId = "$HeaderId"
+        HeaderOrder = $HeaderOrder
+        Description = $Description
+        FileName = $FileName
+        LastRunDate = $null
+        DelimitChar = ","
+        TableAffected = $TableName
+        UseChangeFlag = $False
+        AdditionalSql = $AdditionalSql
+        ColumnHeaders = $True
+        Delete = $False
+        CanDelete = $True
+        ColumnHeadersRaw = "Y"
+        InterfaceDetails = @()
+        AffectedTableObject = @{
+                Code = $TableName
+                Description = $TableName
+                CodeAndDescription = $TableName
+                ActiveRaw = "Y"
+                Active = $True
+        }
+    }
+
+    return $interfaceHeader
+}
+
+function New-eSPDefinitionColumn {
+
+    Param(
+        [Parameter(Mandatory=$true)]$InterfaceID,
+        [Parameter(Mandatory=$true)]$HeaderID,
+        [Parameter(Mandatory=$true)]$FieldId,
+        [Parameter(Mandatory=$true)]$FieldOrder,
+        [Parameter(Mandatory=$true)]$TableName,
+        [Parameter(Mandatory=$true)]$ColumnName,
+        [Parameter(Mandatory=$false)]$FieldLength = 255,
+        [Parameter(Mandatory=$false)]$TableAlias = $null
+    )
+
+    return [ordered]@{
+        "Edit" = $null
+        "InterfaceId" = $InterfaceID
+        "HeaderId" = $HeaderID
+        "FieldId" = $FieldId
+        "FieldOrder" = $FieldOrder
+        "TableName" = $TableName
+        "TableAlias" = $null
+        "ColumnName" = $ColumnName
+        "ScreenType" = $null
+        "ScreenNumber" = $null
+        "FormatString" = $null
+        "StartPosition" = $null
+        "EndPosition" = $null
+        "FieldLength" = $FieldLength
+        "ValidationTable" = $null
+        "CodeColumn" = $null
+        "ValidationList" = $null
+        "ErrorMessage" = $null
+        "ExternalTable" = $null
+        "ExternalColumnIn" = $null
+        "ExternalColumnOut" = $null
+        "Literal" = $null
+        "ColumnOverride" = $null
+        "Delete" = $False
+        "CanDelete" = $True
+        "NewRow" = $True
+        "InterfaceTranslations" = @("")
+    }
+}

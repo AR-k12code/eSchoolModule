@@ -323,10 +323,12 @@ function Get-eSPFile {
         $OutFile = $($report.RawFileName)
     }
 
+    Write-Verbose ("$($eschoolSession.Url)/Reports/$($report.ReportPath)")
+
     try {    
         if ($AsObject) {
             $response = Invoke-WebRequest -Uri "$($eschoolSession.Url)/Reports/$($report.ReportPath)" -WebSession $eschoolSession.Session
-            return $response.Content | ConvertFrom-CSV -Delimiter $Delimeter
+            return [System.Text.Encoding]::UTF8.GetString($response.Content) | ConvertFrom-CSV -Delimiter $Delimeter
         } else {
             Invoke-WebRequest -Uri "$($eschoolSession.Url)/Reports/$($report.ReportPath)" -WebSession $eschoolSession.Session -OutFile $OutFile
         }
@@ -443,8 +445,8 @@ function Invoke-eSPDownloadDefinition {
 
     Write-Verbose ($params | ConvertTo-Json -Depth 99)
 
-    $response = Invoke-RestMethod -Uri "$($eschoolSession.Url)/Utility/RunDownload" `
-        -WebSession $eschoolSession.Session `
+    $response = Invoke-RestMethod -Uri "$($eSchoolSession.Url)/Utility/RunDownload" `
+        -WebSession $eSchoolSession.Session `
         -Method POST `
         -Body $params
 
@@ -1252,7 +1254,7 @@ function New-eSPDefinition {
     Write-Verbose ($jsonpayload)
  
     #attempt to delete existing if its there already
-    Remove-eSPInterfaceId -InterfaceId $($Definition.UploadDownloadDefinition.InterfaceId)
+    Remove-eSPInterfaceId -InterfaceId "$($Definition.UploadDownloadDefinition.InterfaceId)"
 
     $response = Invoke-RestMethod -Uri "$($eSchoolSession.Url)/Utility/SaveUploadDownload" `
         -WebSession $eSchoolSession.Session `
@@ -1278,7 +1280,7 @@ function Remove-eSPInterfaceId {
                 Keys = @(
                     @{
                         Key = "district"
-                        Value = $districtId
+                        Value = "$districtId"
                     },
                     @{
                         Key = "interface_id"
@@ -1288,6 +1290,16 @@ function Remove-eSPInterfaceId {
             }
         )
     }
+
+    $jsonPayload = $params | ConvertTo-Json -Depth 6
+
+    Write-Verbose ($jsonPayload)
+    
+    $response = Invoke-RESTMethod -Uri "$($eSchoolSession.Url)/Search/SaveResults" `
+        -WebSession $eSchoolSession.Session `
+        -Method "POST" `
+        -ContentType "application/json; charset=UTF-8" `
+        -Body $jsonpayload -MaximumRedirection 0
 
 }
 

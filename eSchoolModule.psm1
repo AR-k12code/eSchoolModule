@@ -233,7 +233,7 @@ function Connect-ToeSchool {
         Write-Error "Failed to Set Environment."
         #Throw "Failed to Set Environment."
     } else {
-        Write-Output "Connected to eSchool."
+        Write-Output "Connected to eSchool Server $($fields.'ServerName'.value)"
         $global:eSchoolSession = @{
             Session = $eschoolSession
             Username = $username
@@ -256,10 +256,20 @@ function Disconnect-FromeSchool {
 }
 
 function Assert-eSPSession {
+
+    Param(
+        [Parameter(Mandatory=$false)][switch]$Force #sometimes we need to reauthenticate. Especially after bulk creation of Download Definitions.
+    )
+
     Try {
         #attempt to see the task list. If this sends us a redirect then we know the session has expired. Try to authenticate again.
         #even if this is null it won't fail.
         $tasks = Invoke-RestMethod -Uri "$($eschoolSession.Url)/Task/TaskAndReportData?includeTaskCount=true&includeReports=false&maximumNumberOfReports=1&includeTasks=true&runningTasksOnly=false" -MaximumRedirection 0 -WebSession $eschoolSession.session
+
+        if ($Force) {
+            $params = $eschoolSession.Params
+            Connect-ToeSchool @params
+        }
     } catch {
         if ($eschoolSession) {
             #session exists but has probably timed out. Reuse parameters.
@@ -306,6 +316,7 @@ function Get-eSPFile {
         [Parameter(Mandatory=$true,ParameterSetName="NameLike")][string]$NameLike, #Download the latest file that matches. Example would be HomeAccessPasswords* where there are possibly hundreds of unknown files.
         [Parameter(Mandatory=$false)][string]$OutFile,
         [Parameter(Mandatory=$false)][switch]$AsObject,
+        [Parameter(Mandatory=$false)][switch]$Raw,
         [Parameter(Mandatory=$false)][string]$Delimeter = ',' #This could be Pipe or whatever the eSchool Definition uses.
     )
 
@@ -325,8 +336,14 @@ function Get-eSPFile {
 
     Write-Verbose ("$($eschoolSession.Url)/Reports/$($report.ReportPath)")
 
-    try {    
-        if ($AsObject) {
+    try {  
+        if ($Raw) {
+            #from here you can page through the data and convert to an object reasonably.
+            $response = Invoke-WebRequest -Uri "$($eschoolSession.Url)/Reports/$($report.ReportPath)" -WebSession $eschoolSession.Session
+            return [System.Text.Encoding]::UTF8.GetString($response.Content) 
+            # Then you can .Split("`r`n"), Take [0] + [1..25] | ConvertFrom-CSV -Delimiter '^'
+            # then [0] + [26..50] | ConvertFrom-Csv -Delimiter '^'
+        } elseif ($AsObject) {
             $response = Invoke-WebRequest -Uri "$($eschoolSession.Url)/Reports/$($report.ReportPath)" -WebSession $eschoolSession.Session
             return [System.Text.Encoding]::UTF8.GetString($response.Content) | ConvertFrom-CSV -Delimiter $Delimeter
         } else {
@@ -1477,18 +1494,19 @@ function New-eSPBulkDownloadDefinition {
         -Body $jsonpayload `
         -MaximumRedirection 0
 
+
     if ($response.PageState -eq 1) {
         Write-Warning "Download Definition failed."
         return [PSCustomObject]@{
             'Tables' = $tables -join ','
-            'Status' = $False
+            'Success' = $False
             'Message' = $($response.ValidationErrorMessages)
         }
     } elseif ($response.PageState -eq 2) {
         Write-Host "Download definition created successfully. You can review it here: $($eSchoolSession.Url)/Utility/UploadDownload?interfaceId=$($InterfaceId)" -ForegroundColor Green
         return [PSCustomObject]@{
             'Tables' = $tables -join ','
-            'Status' = $True
+            'Success' = $True
             'Message' = $response
         }
     } else {

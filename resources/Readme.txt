@@ -1,0 +1,1 @@
+This folder should contain the latest information we know about the eSchool database tables.

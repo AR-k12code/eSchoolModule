@@ -2,3 +2,4 @@ test.ps1
 *.csv
 *.txt
 testing/**
+!resources/**

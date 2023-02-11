@@ -798,7 +798,7 @@ function New-eSPEmailDefinitions {
 
     .SYNOPSIS
     This function will create the Upload and Download Definitions used to fix upload definitions.
-    Download Definition : EMLDL,Upload Definition : EMLUP
+    Download Definition : EMLDL, Upload Definition : EMLUP,EMLAC
 
     #>
 
@@ -812,46 +812,17 @@ function New-eSPEmailDefinitions {
         [Parameter(Mandatory=$false)][switch]$Force
     )
 
-    $dd = [ordered]@{
-        "IsCopyNew" = "False"
-        "NewHeaderNames" = @("") #can not be an empty array.
-        "InterfaceHeadersToCopy" = @("") #can not be an empty array.
-        "InterfaceToCopyFrom" = @("") #can not be an empty array.
-        "CopyHeaders" = "False"
-        "PageEditMode" = 0
-        "UploadDownloadDefinition" = @{
-            "UploadDownload" = "D"
-            "DistrictId" = 0
-            "InterfaceId" = "EMLDL"
-            "Description" = "Automated Student Email Download Definition"
-            "UploadDownloadRaw" = "D"
-            "ChangeUser" = $null
-            "DeleteEntity" = $False
-            "InterfaceHeaders" = @(
+    $newDefinition = New-espDefinitionTemplate -InterfaceId EMLDL -Description "Automated Student Email Download Definition"
 
-                [ordered]@{
-                    "InterfaceId" = "EMLDL"
-                    "HeaderId" = "1"
-                    "HeaderOrder" = 1
-                    "Description" = "Students Student ID Email and Contact ID"
-                    "FileName" = "student_email_download.csv"
-                    "LastRunDate" = $null
-                    "DelimitChar" = ","
-                    "UseChangeFlag" = $False
-                    "TableAffected" = "reg_contact"
-                    "AdditionalSql" = "INNER JOIN reg_stu_contact ON reg_stu_contact.contact_id = reg_contact.contact_id INNER JOIN reg ON reg.student_id = reg_stu_contact.student_id"
-                    "ColumnHeaders" = $True
-                    "Delete" = $False
-                    "CanDelete" = $True
-                    "ColumnHeadersRaw" = "Y"
-                    "InterfaceDetails" = @()
-                }
-
-            )
-        }        
-    
-    }
-
+    $newDefinition.UploadDownloadDefinition.InterfaceHeaders += New-eSPInterfaceHeader `
+        -InterfaceId "EMLDL" `
+        -HeaderId 1 `
+        -HeaderOrder 1 `
+        -FileName "student_email_download.csv" `
+        -TableName "reg_contact" `
+        -Description "Automated Student Email Download Definition" `
+        -AdditionalSql 'INNER JOIN reg_stu_contact ON reg_stu_contact.contact_id = reg_contact.contact_id INNER JOIN reg ON reg.student_id = reg_stu_contact.student_id'
+        
     $rows = @(
         @{ table = "reg"; column = "STUDENT_ID"; length = 20 },
         @{ table = "reg_contact"; column = "CONTACT_ID"; length = 20 },
@@ -864,41 +835,13 @@ function New-eSPEmailDefinitions {
     $columns = @()
     $columnNum = 1
     $rows | ForEach-Object {
-        $columns += [ordered]@{
-            "Edit" = $null
-            "InterfaceId" = "EMLDL"
-            "HeaderId" = "1"
-            "FieldId" = "$columnNum"
-            "FieldOrder" = $columnNum
-            "TableName" = $PSItem.table
-            "TableAlias" = $null
-            "ColumnName" = $PSItem.column
-            "ScreenType" = $null
-            "ScreenNumber" = $null
-            "FormatString" = $null
-            "StartPosition" = $null
-            "EndPosition" = $null
-            "FieldLength" = "$($PSItem.length)"
-            "ValidationTable" = $null
-            "CodeColumn" = $null
-            "ValidationList" = $null
-            "ErrorMessage" = $null
-            "ExternalTable" = $null
-            "ExternalColumnIn" = $null
-            "ExternalColumnOut" = $null
-            "Literal" = $null
-            "ColumnOverride" = $null
-            "Delete" = $False
-            "CanDelete" = $True
-            "NewRow" = $True
-            "InterfaceTranslations" = @("") #can not be an empty array.
-        }
+        $columns += New-eSPDefinitionColumn -InterfaceID 'EMLDL' -HeaderID 1 -TableName $($PSitem.table) -FieldId $columnNum -FieldOrder $columnNum -ColumnName $($PSitem.column) -FieldLength $($PSItem.length)
         $columnNum++
     }
 
-    $dd.UploadDownloadDefinition.InterfaceHeaders[0].InterfaceDetails = $columns
+    $newDefinition.UploadDownloadDefinition.InterfaceHeaders[0].InterfaceDetails = $columns
 
-    $jsonpayload = $dd | ConvertTo-Json -depth 6
+    $jsonpayload = $newDefinition | ConvertTo-Json -depth 6
 
     Write-Verbose ($jsonpayload)
  
@@ -915,50 +858,16 @@ function New-eSPEmailDefinitions {
         Upload Definition
     #>
 
-    $ud = [ordered]@{
-        IsCopyNew = "False"
-        NewHeaderNames = @("")
-        InterfaceHeadersToCopy = @("")
-        InterfaceToCopyFrom = @("")
-        CopyHeaders = "False"
-        PageEditMode = 0
-        UploadDownloadDefinition = [ordered]@{
-            UploadDownload = "U"
-            DistrictId = 0
-            InterfaceId = "EMLUP"
-            Description = "Automated Student Email Upload Definition"
-            UploadDownloadRaw = "U"
-            ChangeUser = $null
-            DeleteEntity = $False
-            InterfaceHeaders = @(
-                [ordered]@{
-                    InterfaceId = "EMLUP"
-                    HeaderId = "1"
-                    HeaderOrder = 1
-                    Description = "Students Student ID Email and Contact ID"
-                    FileName = "student_email_upload.csv"
-                    LastRunDate = $null
-                    DelimitChar = ","
-                    UseChangeFlag = $False
-                    TableAffected = "reg_contact"
-                    AdditionalSql = $null
-                    ColumnHeaders = $True
-                    Delete = $False
-                    CanDelete = $True
-                    ColumnHeadersRaw = "Y"
-                    InterfaceDetails = @()
-                    AffectedTableObject = [ordered]@{
-                        Code = "reg_contact"
-                        Description = "Contacts"
-                        CodeAndDescription = "reg_contact - Contacts"
-                        ActiveRaw = "Y"
-                        Active = $True
-                    }
-                }
-            )
-        }
-    }
+    $newDefinition = New-espDefinitionTemplate -InterfaceId EMLUP -Description "Automated Student Email Upload Definition" -DefintionType Upload
 
+    $newDefinition.UploadDownloadDefinition.InterfaceHeaders += New-eSPInterfaceHeader `
+        -InterfaceId "EMLUP" `
+        -HeaderId 1 `
+        -HeaderOrder 1 `
+        -FileName "student_email_upload.csv" `
+        -TableName "reg_contact" `
+        -Description "Automated Student Email Upload Definition"
+        
     $rows = @(
         @{ table = "reg_contact"; column = "CONTACT_ID"; length = 20 },
         @{ table = "reg_contact"; column = "EMAIL"; length = 250 }
@@ -967,41 +876,13 @@ function New-eSPEmailDefinitions {
     $columns = @()
     $columnNum = 1
     $rows | ForEach-Object {
-        $columns += [ordered]@{
-            "Edit" = $null
-            "InterfaceId" = "EMLUP"
-            "HeaderId" = "1"
-            "FieldId" = "$columnNum"
-            "FieldOrder" = $columnNum
-            "TableName" = $PSItem.table
-            "TableAlias" = $null
-            "ColumnName" = $PSItem.column
-            "ScreenType" = $null
-            "ScreenNumber" = $null
-            "FormatString" = $null
-            "StartPosition" = $null
-            "EndPosition" = $null
-            "FieldLength" = "$($PSItem.length)"
-            "ValidationTable" = $null
-            "CodeColumn" = $null
-            "ValidationList" = $null
-            "ErrorMessage" = $null
-            "ExternalTable" = $null
-            "ExternalColumnIn" = $null
-            "ExternalColumnOut" = $null
-            "Literal" = $null
-            "ColumnOverride" = $null
-            "Delete" = $False
-            "CanDelete" = $True
-            "NewRow" = $True
-            "InterfaceTranslations" = @("") #can not be an empty array.
-        }
+        $columns += New-eSPDefinitionColumn -InterfaceID 'EMLUP' -HeaderID 1 -TableName $($PSitem.table) -FieldId $columnNum -FieldOrder $columnNum -ColumnName $($PSitem.column) -FieldLength $($PSItem.length)
         $columnNum++
     }
 
-    $ud.UploadDownloadDefinition.InterfaceHeaders[0].InterfaceDetails = $columns
+    $newDefinition.UploadDownloadDefinition.InterfaceHeaders[0].InterfaceDetails = $columns
 
-    $jsonpayload = $ud | ConvertTo-Json -depth 6
+    $jsonpayload = $newDefinition | ConvertTo-Json -depth 6
 
     Write-Verbose ($jsonpayload)
  
@@ -1019,51 +900,16 @@ function New-eSPEmailDefinitions {
         Web Access Upload Definition.
     #>
 
-    $wa = @{
-        IsCopyNew = "False"
-        NewHeaderNames = @("")
-        InterfaceHeadersToCopy = @("")
-        InterfaceToCopyFrom = @("")
-        CopyHeaders = "False"
-        PageEditMode = 0
-        UploadDownloadDefinition = @{
-            UploadDownload = "U"
-            DistrictId = 0
-            InterfaceId = "EMLAC"
-            Description = "Automated Student Web Access Upload Definition"
-            UploadDownloadRaw = "U"
-            ChangeUser = $null
-            DeleteEntity = $False
-            InterfaceHeaders = @(
-                @{
-                    InterfaceId = "EMLAC"
-                    HeaderId = "1"
-                    HeaderOrder = 1
-                    Description = "Students Contact ID and WEB_ACCESS"
-                    FileName = "webaccess_upload.csv"
-                    LastRunDate = $null
-                    DelimitChar = ","
-                    UseChangeFlag = $False
-                    TableAffected = "reg_stu_contact"
-                    AdditionalSql = $null
-                    ColumnHeaders = $True
-                    Delete = $False
-                    CanDelete = $True
-                    ColumnHeadersRaw = "Y"
-                    InterfaceDetails = @()
-                    AffectedTableObject = @{
-                        Code = "reg_stu_contact"
-                        Description = "Contacts"
-                        CodeAndDescription = "reg_stu_contact - Contacts"
-                        ActiveRaw = "Y"
-                        Active = $True
-                    }
-                }
-            )
+    $newDefinition = New-espDefinitionTemplate -InterfaceId EMLAC -Description "Automated Student Web Access Upload Definition" -DefintionType Upload
 
-        }
-    }
-
+    $newDefinition.UploadDownloadDefinition.InterfaceHeaders += New-eSPInterfaceHeader `
+        -InterfaceId "EMLAC" `
+        -HeaderId 1 `
+        -HeaderOrder 1 `
+        -FileName "webaccess_upload.csv" `
+        -TableName "reg_stu_contact" `
+        -Description "Automated Student Web Access Upload Definition"
+    
     $rows = @(
         @{ table = "reg_stu_contact"; column = "CONTACT_ID"; length = 20 },
         @{ table = "reg_stu_contact"; column = "STUDENT_ID"; length = 20 },
@@ -1074,41 +920,13 @@ function New-eSPEmailDefinitions {
     $columns = @()
     $columnNum = 1
     $rows | ForEach-Object {
-        $columns += [ordered]@{
-            "Edit" = $null
-            "InterfaceId" = "EMLAC"
-            "HeaderId" = "1"
-            "FieldId" = "$columnNum"
-            "FieldOrder" = $columnNum
-            "TableName" = $PSItem.table
-            "TableAlias" = $null
-            "ColumnName" = $PSItem.column
-            "ScreenType" = $null
-            "ScreenNumber" = $null
-            "FormatString" = $null
-            "StartPosition" = $null
-            "EndPosition" = $null
-            "FieldLength" = "$($PSItem.length)"
-            "ValidationTable" = $null
-            "CodeColumn" = $null
-            "ValidationList" = $null
-            "ErrorMessage" = $null
-            "ExternalTable" = $null
-            "ExternalColumnIn" = $null
-            "ExternalColumnOut" = $null
-            "Literal" = $null
-            "ColumnOverride" = $null
-            "Delete" = $False
-            "CanDelete" = $True
-            "NewRow" = $True
-            "InterfaceTranslations" = @("") #can not be an empty array.
-        }
+        $columns += New-eSPDefinitionColumn -InterfaceID 'EMLAC' -HeaderID 1 -TableName $($PSitem.table) -FieldId $columnNum -FieldOrder $columnNum -ColumnName $($PSitem.column) -FieldLength $($PSItem.length)
         $columnNum++
     }
 
-    $wa.UploadDownloadDefinition.InterfaceHeaders[0].InterfaceDetails = $columns
+    $newDefinition.UploadDownloadDefinition.InterfaceHeaders[0].InterfaceDetails = $columns
     
-    $jsonpayload = $wa | ConvertTo-Json -depth 6
+    $jsonpayload = $newDefinition | ConvertTo-Json -depth 6
 
     Write-Verbose ($jsonpayload)
  

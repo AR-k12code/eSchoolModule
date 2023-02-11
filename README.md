@@ -67,18 +67,27 @@ Invoke-eSPUploadDefinition [-InterfaceID] <String> [[-RunMode] <String>] [-DoNot
 ````
 
 ### List School Ids
+By default will only return schools with a default calendar assigned.
 ````
-Get-eSPSchools [[-IgnoreBuildings] <String>]
-````
-
-### Basic Student Info (unstructured data)
-````
-Get-eSPStudents -Building <Object>
+Get-eSPSchools [-All]
 ````
 
-### Additional Student Info (structured data)
+### Get Student Info
 ````
-Get-eSPStudentDetails [-StudentId] <Object>
+# Get All Active Students
+Get-eSPStudents
+
+# Get Students from a Specific Building
+Get-eSPStudents -Building 16
+
+# Get Students in Grade(s)
+Get-eSPStudents -Grade '01','08','KF'
+
+# Additional Options
+Get-eSPStudents [-InActive] [-Graduated] [-All]
+
+# Include Additional Tables
+Get-eSPStudents -Grade '01' -IncludeTable reg_academic,reg_notes
 ````
 
 ### Update Saved Password

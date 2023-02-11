@@ -1,111 +1,568 @@
-<select data-val="true" data-val-sgvalid="" data-sgvalid-isvalid="true" data-dropdown-auto-width="true" class="sg-list-field-table-key select2-offscreen form-control sg-select-box" data-allow-clear="true" data-val-sginvalidselections-values="[]" name="listFieldTableKey" data-format-result="SunGard.Bootstrap.DropDownList.FormatDescription" data-format-selection="SunGard.Bootstrap.DropDownList.FormatDescription" data-matcher="SunGard.Bootstrap.DropDownList.DescriptionMatcher" data-sg-sort-order="0" data-sort-results="SunGard.Bootstrap.DropDownList.SortMatchesFirst" data-sg-id-property="id" data-sg-text-property="text" data-sg-process-data-options="SunGard.Bootstrap.DropDownList.ProcessDataOptions" data-sg-process-invalid-selections="false" data-sg-invalid-value-option-text="" data-sg-clone-data="false" data-sg-always-add-invalid-values="false" id="listFieldTableKey" tabindex="-1" title="">
-	<option value="" selected="selected" data-table-name=""/>
-	<optgroup label="Areas">
-		<option value="v_custom_vision" data-table-name="v_custom_vision">Arkansas Custom Vision Exam</option>
-		<option value="mr_stu_hdr" data-table-name="mr_stu_hdr">Student Mark Reporting Course Header</option>
-		<option value="reg_travel" data-table-name="reg_travel">Travel</option>
-		<option value="reg_notes" data-table-name="reg_notes">Student Notes</option>
-		<option value="reg_academic" data-table-name="reg_academic">Academic</option>
-		<option value="artb_se_referral" data-table-name="artb_se_referral">Referral Tracking Information</option>
-		<option value="schd_stu_req" data-table-name="schd_stu_req">Student Requests</option>
-		<option value="reg_personal" data-table-name="reg_personal">Personal</option>
-		<option value="med_scoliosis" data-table-name="med_scoliosis">Scoliosis</option>
-		<option value="med_hearing" data-table-name="med_hearing">Hearing</option>
-		<option value="reg_stu_contact" data-table-name="reg_stu_contact">Student/Contact Relationships</option>
-		<option value="schd_stu_status" data-table-name="schd_stu_status">Schedule Status</option>
-		<option value="mr_stu_marks" data-table-name="mr_stu_marks">Student Mark Reporting Marks</option>
-		<option value="med_notes" data-table-name="med_notes">Medical Notes</option>
-		<option value="reg_contact_phone" data-table-name="reg_contact_phone">Contact Phones</option>
-		<option value="reg_next_year" data-table-name="reg_next_year">Next Year Demographic</option>
-		<option value="reg_ethnicity" data-table-name="reg_ethnicity">Student Ethnicities</option>
-		<option value="med_referral" data-table-name="med_referral">Referrals</option>
-		<option value="med_office" data-table-name="med_office">Office Visits</option>
-		<option value="reg_contact" data-table-name="reg_contact">Contacts</option>
-		<option value="med_series" data-table-name="med_series">Immunization Series</option>
-		<option value="med_vision" data-table-name="med_vision">Vision</option>
-		<option value="reg_med_alerts" data-table-name="reg_med_alerts">Medical Alerts</option>
-		<option value="reg_disability" data-table-name="reg_disability">Disabilities</option>
-		<option value="reg" data-table-name="reg">Demographic</option>
-		<option value="schd_ms" data-table-name="schd_ms">Master Schedule</option>
-		<option value="reg_stu_at_risk" data-table-name="reg_stu_at_risk">Student At Risk</option>
-		<option value="reg_legal_info" data-table-name="reg_legal_info">Legal/Birth Information</option>
-		<option value="med_general" data-table-name="med_general">Immunizations</option>
-		<option value="reg_activity_det" data-table-name="reg_activity_det">Activity Details</option>
-		<option value="med_physical" data-table-name="med_physical">Physical Exams</option>
-		<option value="reg_classification" data-table-name="reg_classification">Student Classifications</option>
-		<option value="med_growth" data-table-name="med_growth">Growth</option>
-		<option value="med_required" data-table-name="med_required">Medication Requirements</option>
-		<option value="reg_emergency" data-table-name="reg_emergency">Emergency</option>
-		<option value="med_issued" data-table-name="med_issued">Medication Log</option>
-		<option value="med_dental" data-table-name="med_dental">Dental</option>
-		<option value="med_vitals" data-table-name="med_vitals">Medical Vitals</option>
-		<option value="reg_summer_school" data-table-name="reg_summer_school">Summer School Demographics</option>
-		<option value="reg_entry_with" data-table-name="reg_entry_with">Entry/Withdrawal</option>
-		<option value="reg_med_procedure" data-table-name="reg_med_procedure">Medical Procedures</option>
-		<option value="med_office_det" data-table-name="med_office_det">Office Details</option>
-		<option value="reg_exclude_rank" data-table-name="reg_exclude_rank">Rank Exclusions</option>
-		<option value="med_shot" data-table-name="med_shot">Immunization Shots</option>
-		<option value="schd_stu_course" data-table-name="schd_stu_course">Student Schedules</option>
-		<option value="sec_v_global_id_contact" data-table-name="sec_v_global_id_contact">Student/Parent Global ID</option>
-		<option value="reg_exclude_honor" data-table-name="reg_exclude_honor">Honor Roll Exclusions</option>
-		<option value="reg_academic_supp" data-table-name="reg_academic_supp">Supplementary Requirement Group</option>
-		<option value="reg_user-R-5000" data-table-name="reg_user" data-screen-type="R" data-screen-number="5000">Early Childhood General Information</option>
-		<option value="reg_user-R-5090" data-table-name="reg_user" data-screen-type="R" data-screen-number="5090">School Age Student</option>
-		<option value="reg_user-R-1500" data-table-name="reg_user" data-screen-type="R" data-screen-number="1500">School for the Deaf Information</option>
-		<option value="reg_user-R-102" data-table-name="reg_user" data-screen-type="R" data-screen-number="102">SIS/Misc Items</option>
-		<option value="reg_user-R-5020" data-table-name="reg_user" data-screen-type="R" data-screen-number="5020">Early Childhood Anticipated Services</option>
-		<option value="reg_user-R-5030" data-table-name="reg_user" data-screen-type="R" data-screen-number="5030">Early Childhood Development Needs</option>
-		<option value="reg_user-R-5040" data-table-name="reg_user" data-screen-type="R" data-screen-number="5040">Early Childhood Related Services</option>
-		<option value="reg_user-R-105" data-table-name="reg_user" data-screen-type="R" data-screen-number="105">ELL</option>
-		<option value="reg_user-R-5120" data-table-name="reg_user" data-screen-type="R" data-screen-number="5120">School Age Anticipated Services</option>
-		<option value="reg_user-R-5130" data-table-name="reg_user" data-screen-type="R" data-screen-number="5130">School Age Educational Needs Information</option>
-		<option value="reg_user-R-5140" data-table-name="reg_user" data-screen-type="R" data-screen-number="5140">School Age Related Services Information</option>
-		<option value="reg_user-R-5150" data-table-name="reg_user" data-screen-type="R" data-screen-number="5150">School Age Evaluations Information</option>
-		<option value="reg_user-R-5050" data-table-name="reg_user" data-screen-type="R" data-screen-number="5050">Coordinated Early Intervening General Information</option>
-		<option value="reg_user-R-101" data-table-name="reg_user" data-screen-type="R" data-screen-number="101">Student Workplace &amp; Vehicle Info</option>
-		<option value="reg_user-R-999" data-table-name="reg_user" data-screen-type="R" data-screen-number="999">SSN Correction</option>
-		<option value="reg_user-R-106" data-table-name="reg_user" data-screen-type="R" data-screen-number="106">AR Seal of Biliteracy</option>
-		<option value="reg_user-R-1000" data-table-name="reg_user" data-screen-type="R" data-screen-number="1000">DO NOT USE (Previously Pull-Out Teachers)</option>
-		<option value="reg_user-R-5070" data-table-name="reg_user" data-screen-type="R" data-screen-number="5070">Coordinated Early Intervening Service Types</option>
-		<option value="reg_user-R-29000" data-table-name="reg_user" data-screen-type="R" data-screen-number="29000">Learning Location</option>
-	</optgroup>
-	<optgroup label="Programs">
-		<option value="reg_programs-arell" data-table-name="reg_programs" data-program-id="ARELL">ELL Entry/Exit</option>
-		<option value="reg_programs-arses" data-table-name="reg_programs" data-program-id="ARSES">Meal Status</option>
-		<option value="reg_programs-arcur" data-table-name="reg_programs" data-program-id="ARCUR">Curriculum</option>
-		<option value="reg_programs-argt" data-table-name="reg_programs" data-program-id="ARGT">Gifted/Talented</option>
-		<option value="reg_programs-artrn" data-table-name="reg_programs" data-program-id="ARTRN">Transported</option>
-		<option value="reg_programs-arrs" data-table-name="reg_programs" data-program-id="ARRS">Residency</option>
-		<option value="reg_programs-ar_ec" data-table-name="reg_programs" data-program-id="AR_EC">Early Childhood Program</option>
-		<option value="reg_programs-ar_sa" data-table-name="reg_programs" data-program-id="AR_SA">School Age Program</option>
-		<option value="reg_programs-ar_ei" data-table-name="reg_programs" data-program-id="AR_EI">Coordinated Early Intervening Services Program</option>
-		<option value="reg_programs-ps-ll" data-table-name="reg_programs" data-program-id="PS-LL">Learning Location</option>
-	</optgroup>
-</select>
-<select data-val="true" data-val-sgvalid="" data-sgvalid-isvalid="true" data-dropdown-auto-width="true" class="sg-list-field-column-key select2-offscreen form-control sg-select-box" data-allow-clear="true" data-val-sginvalidselections-values="[]" name="listFieldColumnName" data-format-result="SunGard.Bootstrap.DropDownList.FormatDescription" data-format-selection="SunGard.Bootstrap.DropDownList.FormatDescription" data-matcher="SunGard.Bootstrap.DropDownList.DescriptionMatcher" data-sg-sort-order="0" data-sort-results="SunGard.Bootstrap.DropDownList.SortMatchesFirst" data-sg-id-property="id" data-sg-text-property="text" data-sg-process-data-options="SunGard.Bootstrap.DropDownList.ProcessDataOptions" data-sg-process-invalid-selections="false" data-sg-invalid-value-option-text="" data-sg-clone-data="false" data-sg-always-add-invalid-values="false" id="listFieldColumnName" tabindex="-1" title="">
-	<option value="" selected="selected"/>
-	<option value="reg_academic.pending_grad_plan">Pending Grad Plan</option>
-	<option value="reg_academic.change_uid">Change Uid</option>
-	<option value="reg_academic.curriculum">Curriculum</option>
-	<option value="reg_academic.diploma_type">Diploma Type</option>
-	<option value="reg_academic.modeled_grad_plan">Modeled Grad Plan</option>
-	<option value="reg_academic.advisor">Advisor</option>
-	<option value="reg_academic.act_grad_plan">Actual Graduation Plan</option>
-	<option value="reg_academic.elig_expires_date">Eligibility Restriction Date</option>
-	<option value="reg_academic.change_date_time">Change Date Time</option>
-	<option value="reg_academic.federal_grad_year">Federal Grad Year</option>
-	<option value="reg_academic.promotion">Promotion</option>
-	<option value="reg_academic.elig_effective_dte">Eligibility Effective Date</option>
-	<option value="reg_academic.votec">VoTec</option>
-	<option value="reg_academic.graduation_year">Graduation Year</option>
-	<option value="reg_academic.student_id">Student Id</option>
-	<option value="reg_academic.schd_priority">Scheduling Priority</option>
-	<option value="reg_academic.elig_status">Elig Status</option>
-	<option value="reg_academic.rc_hold_override">Rc Hold Override</option>
-	<option value="reg_academic.hold_report_card">Report Card on Hold</option>
-	<option value="reg_academic.elig_reason">Elig Reason</option>
-	<option value="reg_academic.graduation_date">Graduation Date</option>
-	<option value="reg_academic.disciplinarian">Disciplinarian</option>
-	<option value="reg_academic.graduate_req_group">Graduation Req Group</option>
-	<option value="reg_academic.exp_grad_plan">Expected Graduation Plan</option>
-</select>
+table,field,description
+reg_academic,pending_grad_plan,Pending Grad Plan
+reg_academic,change_uid,Change Uid
+reg_academic,curriculum,Curriculum
+reg_academic,diploma_type,Diploma Type
+reg_academic,modeled_grad_plan,Modeled Grad Plan
+reg_academic,advisor,Advisor
+reg_academic,act_grad_plan,Actual Graduation Plan
+reg_academic,elig_expires_date,Eligibility Restriction Date
+reg_academic,change_date_time,Change Date Time
+reg_academic,federal_grad_year,Federal Grad Year
+reg_academic,promotion,Promotion
+reg_academic,elig_effective_dte,Eligibility Effective Date
+reg_academic,votec,VoTec
+reg_academic,graduation_year,Graduation Year
+reg_academic,student_id,Student Id
+reg_academic,schd_priority,Scheduling Priority
+reg_academic,elig_status,Elig Status
+reg_academic,rc_hold_override,Rc Hold Override
+reg_academic,hold_report_card,Report Card on Hold
+reg_academic,elig_reason,Elig Reason
+reg_academic,graduation_date,Graduation Date
+reg_academic,disciplinarian,Disciplinarian
+reg_academic,graduate_req_group,Graduation Req Group
+reg_academic,exp_grad_plan,Expected Graduation Plan
+reg_activity_det,start_date,Start Date
+reg_activity_det,change_uid,Change Uid
+reg_activity_det,school_year,School Year
+reg_activity_det,duration,Duration
+reg_activity_det,override,Override
+reg_activity_det,student_id,Student Id
+reg_activity_det,end_date,End Date
+reg_activity_det,ineligible,Ineligible
+reg_activity_det,activity_comment,Activity Comment
+reg_activity_det,activity_status,Activity Status
+reg_activity_det,activity_code,Activity Code
+reg_activity_det,change_date_time,Change Date Time
+reg_activity_det,building,Building
+reg_user-R-106,field_value-1,Biliteracy Language 1
+reg_user-R-106,field_value-2,Achievement Date 1
+reg_user-R-106,field_value-3,Biliteracy Language 2
+reg_user-R-106,field_value-4,Achievement Date 2
+reg_user-R-106,field_value-5,Biliteracy Language 3
+reg_user-R-106,field_value-6,Achievement Date 3
+reg_user-R-106,field_value-7,Biliteracy Language 4
+reg_user-R-106,field_value-8,Achievement Date 4
+reg_user-R-106,field_value-1,Biliteracy Language 1
+reg_user-R-106,field_value-2,Achievement Date 1
+reg_user-R-106,field_value-3,Biliteracy Language 2
+reg_user-R-106,field_value-4,Achievement Date 2
+reg_user-R-106,field_value-5,Biliteracy Language 3
+reg_user-R-106,field_value-6,Achievement Date 3
+reg_user-R-106,field_value-7,Biliteracy Language 4
+reg_user-R-106,field_value-8,Achievement Date 4
+reg_contact_phone,phone_extension,Phone Extension
+reg_contact_phone,change_date_time,Change Date Time
+reg_contact_phone,sif_refid,Sif Refid
+reg_contact_phone,change_uid,Change Uid
+reg_contact_phone,phone_type,Phone Type
+reg_contact_phone,phone_listing,Phone Listing
+reg_contact_phone,phone,Phone
+reg_contact_phone,phone_priority,Phone Priority
+reg_contact,login_id,Contact Login Id
+reg_contact,email_preference,Contact Email Preference
+reg_contact,last_name,Contact Last Name
+reg_contact,home_building_type,Contact Home Building Type
+reg_contact,employer,Contact Employer
+reg_contact,street_number,Contact Street Number
+reg_contact,city,Contact City
+reg_contact,email,Contact Email
+reg_contact,apartment,Contact Apartment
+reg_contact,salutation,Contact Salutation
+reg_contact,home_language,Contact Home Language
+reg_contact,street_name,Contact Street Name
+reg_contact,education_level,Contact Education Level
+reg_contact,generation,Contact Generation
+reg_contact,plan_area_number,Contact Plan Area Number
+reg_contact,pwd_chg_date_time,Contact Pwd Chg Date Time
+reg_contact,chg_pw_next_login,Contact Chg Pw Next Login
+reg_contact,middle_name,Contact Middle Name
+reg_contact,street_prefix,Contact Street Prefix
+reg_contact,onboard_token_used,Onboard Token Used
+reg_contact,title,Contact Title
+reg_contact,hac_ldap_flag,Contact Hac Ldap Flag
+reg_contact,sif_refid,Contact Sif Refid
+reg_contact,state,Contact State
+reg_contact,key_used,Key Used
+reg_contact,first_name,Contact First Name
+reg_contact,zip,Contact Zip
+reg_contact,acct_locked_date_time,Contact Acct Locked Date Time
+reg_contact,use_for_mailing,Contact Use For Mailing
+reg_contact,complex,Contact Complex
+reg_contact,development,Contact Development
+reg_contact,change_uid,Contact Change Uid
+reg_contact,street_type,Contact Street Type
+reg_contact,language,Contact Language
+reg_contact,street_suffix,Contact Street Suffix
+reg_contact,change_date_time,Contact Change Date Time
+reg_contact,delivery_point,Contact Delivery Point
+reg_contact,acct_locked,Contact Acct Locked
+reg_contact,last_login_date,Contact Last Login Date
+reg_user-R-5050,field_value-1,Entry/Withdrawal
+reg_user-R-5050,field_value-2,Birth Date
+reg_user-R-5050,field_value-3,Gender
+reg_user-R-5050,field_value-4,State ID
+reg_user-R-5050,field_value-5,ELL
+reg_user-R-5050,field_value-6,Resident LEA
+reg_user-R-5070,field_value-1,Service Type
+reg_user-R-5070,field_value-2,Other Service
+reg_user-R-5070,field_value-3,Begin Date
+reg_user-R-5070,field_value-4,End Date
+reg,res_county_code,County of Residence
+reg,dist_enroll_date,District Enrollment Date
+reg,change_uid,Change Uid
+reg,calendar,Calendar
+reg,nickname,Nickname
+reg,first_name,First Name
+reg,house_team,House/Team
+reg,family_census,Family/Census Number
+reg,homeroom_primary,Primary Homeroom
+reg,current_status,Current Status
+reg,state_res_building,State Building of Residence
+reg,last_name,Last Name
+reg,middle_name,Middle Name
+reg,birthdate,Birth Date
+reg,home_district,District of Residence
+reg,grade,Grade
+reg,state_enroll_date,State Enrollment Date
+reg,counselor,Counselor
+reg,alt_district,Alternate District
+reg,attending_district,Attending District
+reg,us_enroll_date,US Enrollment Date
+reg,building_reason,Building Reason
+reg,grade_9_date,Date Entered Grade 9
+reg,building,Building
+reg,gender,Gender
+reg,summer_status,Summer Status
+reg,change_date_time,Change Date Time
+reg,generation,Generation
+reg,homeroom_secondary,Secondary Homeroom
+reg,alt_building,Alternate Building
+reg,home_building,Home Building
+reg,building_override,Building Override
+reg,student_id,Student ID
+reg,language,Home Language
+reg,alt_bldg_acct,Alt Accountablility Building
+reg,native_language,Native Language
+med_dental,initials,Initials
+med_dental,location,Location
+med_dental,test_date,Test Date
+med_dental,student_id,Student Id
+med_dental,grade,Grade
+med_dental,change_uid,Change Uid
+med_dental,change_date_time,Change Date Time
+med_dental,status,Status
+reg_disability,disability_order,Disability Order
+reg_disability,end_date,End Date
+reg_disability,student_id,Student Id
+reg_disability,change_date_time,Change Date Time
+reg_disability,sequence_num,Sequence Num
+reg_disability,start_date,Start Date
+reg_disability,change_uid,Change Uid
+reg_disability,disability,Disability
+reg_user-R-5020,field_value-1,Anticipated Services Code
+reg_user-R-5030,field_value-1,Development Needs Code
+reg_user-R-5000,field_value-50,County
+reg_user-R-5000,field_value-51,Primary Disability
+reg_user-R-5000,field_value-3,Educational Environment
+reg_user-R-5000,field_value-52,Referral Date
+reg_user-R-5000,field_value-7,Referral Conference Date
+reg_user-R-5000,field_value-8,Evaluation Date
+reg_user-R-5000,field_value-9,Annual Review Date
+reg_user-R-5000,field_value-48,Person Referring
+reg_user-R-5000,field_value-10,Entry Assessment Date
+reg_user-R-5000,field_value-11,Entry Soc Emtnl Func Score
+reg_user-R-5000,field_value-12,Entry Kldg/Skills Func Score
+reg_user-R-5000,field_value-13,Entry Self Help Func Score
+reg_user-R-5000,field_value-14,Assessment 1 Date
+reg_user-R-5000,field_value-15,Assess1 Soc Emtnl Func Score
+reg_user-R-5000,field_value-16,Assess1 Soc Emtnl Func Imprv
+reg_user-R-5000,field_value-53,Conference LEA
+reg_user-R-5000,field_value-17,Assess1 Kldg/Skills Func Score
+reg_user-R-5000,field_value-18,Assess1 Kldg/Skills Func Imprv
+reg_user-R-5000,field_value-19,Assess1 Self Help Func Score
+reg_user-R-5000,field_value-20,Assess1 Self Help Func Imprv
+reg_user-R-5000,field_value-21,Assessment 2 Date
+reg_user-R-5000,field_value-22,Assess2 Soc Emtnl Func Score
+reg_user-R-5000,field_value-23,Assess2 Soc Emtnl Func Imprv
+reg_user-R-5000,field_value-24,Assess2 Kldg/Skills Func Score
+reg_user-R-5000,field_value-25,Assess2 Kldg/Skills Func Imprv
+reg_user-R-5000,field_value-26,Assess2 Self Help Func Score
+reg_user-R-5000,field_value-27,Assess2 Self Help Func Imprv
+reg_user-R-5000,field_value-28,Exit Assessment Date
+reg_user-R-5000,field_value-29,Exit Soc Emtnl Func Score
+reg_user-R-5000,field_value-32,Exit Soc Emtnl Func Imprv
+reg_user-R-5000,field_value-30,Exit Kldg/Skills Func Score
+reg_user-R-5000,field_value-33,Exit Kldg/Skills Func Imprv
+reg_user-R-5000,field_value-31,Exit Self Help Func Score
+reg_user-R-5000,field_value-34,Exit Self Help Func Imprv
+reg_user-R-5000,field_value-35,Placement Date
+reg_user-R-5000,field_value-36,Temporary Student
+reg_user-R-5000,field_value-37,Agency Name
+reg_user-R-5000,field_value-38,Agency City
+reg_user-R-5000,field_value-39,Teacher ID
+reg_user-R-5000,field_value-40,Speech ID
+reg_user-R-5000,field_value-41,Paraprofessional ID
+reg_user-R-5000,field_value-42,Other ID
+reg_user-R-5000,field_value-43,Program Type
+reg_user-R-5000,field_value-44,New Student School Year
+reg_user-R-5000,field_value-45,ELL
+reg_user-R-5000,field_value-46,Transition Conference Date
+reg_user-R-5000,field_value-47,Transition Code
+reg_user-R-5000,field_value-1,Entry/Withdrawal
+reg_user-R-5000,field_value-2,Transfer
+reg_user-R-5000,field_value-49,Resident LEA
+reg_user-R-5040,field_value-1,Related Services Code
+reg_user-R-105,field_value-1,ELL Entry/Exit
+reg_user-R-105,field_value-2,ESL/ELL Waived Date
+reg_user-R-105,field_value-3,ESL/ELL Monitored
+reg_user-R-105,field_value-4,ELD Program Type
+reg_user-R-105,field_value-5,Core Content Access
+reg_user-R-105,field_value-6,Recently Arrived EL
+reg_emergency,change_date_time,Change Date Time
+reg_emergency,insurance_company,Insurance Company
+reg_emergency,dentist_phone,Dentist Phone
+reg_emergency,insurance_subscr,Subscriber Name
+reg_emergency,student_id,Student Id
+reg_emergency,dentist_ext,Dentist Ext
+reg_emergency,doctor_name,Physician
+reg_emergency,insurance_group,Group Number
+reg_emergency,insurance_id,Insurance ID Number
+reg_emergency,dentist,Dentist
+reg_emergency,doctor_phone,Physician Phone
+reg_emergency,doctor_extension,Physician Ext
+reg_emergency,change_uid,Change Uid
+reg_emergency,insurance_grp_name,Group Name
+reg_emergency,hospital_code,Hospital Code
+reg_entry_with,entry_wd_type,E/W Entry Withdrawal Type
+reg_entry_with,calendar,E/W Calendar
+reg_entry_with,entry_date,Entry Date
+reg_entry_with,school_year,E/W School Year
+reg_entry_with,student_id,E/W Student Id
+reg_entry_with,grade,E/W Grade
+reg_entry_with,entry_code,Entry Code
+reg_entry_with,change_date_time,E/W Change Date Time
+reg_entry_with,comments,E/W Comments
+reg_entry_with,building,E/W Building
+reg_entry_with,withdrawal_date,Withdrawal Date
+reg_entry_with,withdrawal_code,Withdrawal Code
+reg_entry_with,change_uid,E/W Change Uid
+med_growth,percent_height,Percent Height
+med_growth,bmi,Bmi
+med_growth,initials,Initials
+med_growth,weight,Weight
+med_growth,an_reading,An Reading
+med_growth,blood_pressure_sys_an,Blood Pressure Sys An
+med_growth,test_date,Test Date
+med_growth,change_uid,Change Uid
+med_growth,student_id,Student Id
+med_growth,percent_weight,Percent Weight
+med_growth,blood_pressure_dia_an,Blood Pressure Dia An
+med_growth,percent_bmi,Percent Bmi
+med_growth,blood_pressure_sys,Blood Pressure Sys
+med_growth,blood_pressure_dia,Blood Pressure Dia
+med_growth,height,Height
+med_growth,grade,Grade
+med_growth,change_date_time,Change Date Time
+med_growth,location,Location
+med_hearing,change_date_time,Change Date Time
+med_hearing,grade,Grade
+med_hearing,change_uid,Change Uid
+med_hearing,location,Location
+med_hearing,student_id,Student Id
+med_hearing,test_date,Test Date
+med_hearing,left_ear,Left Ear
+med_hearing,right_ear,Right Ear
+med_hearing,initials,Initials
+reg_exclude_honor,change_date_time,Change Date Time
+reg_exclude_honor,honor_type,Honor Type
+reg_exclude_honor,student_id,Student Id
+reg_exclude_honor,change_uid,Change Uid
+schd_ms,gender_restriction,Gender Restriction
+schd_ms,department,Department
+schd_ms,block_type,Block Type
+schd_ms,track,Track
+schd_ms,votec,Votec
+schd_ms,fee,Fee
+schd_ms,description,Description
+schd_ms,maximum_seats,Maximum Seats
+schd_ms,lock,Lock
+schd_ms,duration_type,Duration Type
+schd_ms,classify_num_or_per,Classify Num Or Per
+schd_ms,state_crs_equiv,State Crs Equiv
+schd_ms,course_section,Course Section
+schd_ms,subj_area_credit,Subj Area Credit
+schd_ms,nces_code,Nces Code
+schd_ms,study_hall,Study Hall
+schd_ms,school_year,School Year
+schd_ms,summer_school,Summer School
+schd_ms,average_type,Average ID
+schd_ms,classify_stus_max,Classify Stus Max
+schd_ms,course_credit_basis,Course Credit Basis
+schd_ms,building,Building
+schd_ms,course,Course
+schd_ms,category_type,Category Type
+schd_ms,change_uid,Change Uid
+schd_ms,same_teacher,Same Teacher
+schd_ms,change_date_time,Change Date Time
+reg_legal_info,legal_middle_name,Legal Middle Name
+reg_legal_info,change_uid,Change Uid
+reg_legal_info,legal_last_name,Legal Last Name
+reg_legal_info,change_reason,Change Reason
+reg_legal_info,legal_gender,Legal Gender
+reg_legal_info,student_id,Student Id
+reg_legal_info,legal_first_name,Legal First Name
+reg_legal_info,legal_generation,Legal Generation
+reg_legal_info,change_date_time,Change Date Time
+reg_med_alerts,med_alert_code,Med Alert Code
+reg_med_alerts,end_date,End Date
+reg_med_alerts,change_uid,Change Uid
+reg_med_alerts,change_date_time,Change Date Time
+reg_med_alerts,med_alert_comment,Med Alert Comment
+reg_med_alerts,sequence_num,Sequence Num
+reg_med_alerts,student_id,Student Id
+reg_med_alerts,start_date,Start Date
+med_notes,change_uid,Change Uid
+med_notes,event_type,Event Type
+med_notes,event_date,Event Date
+med_notes,change_date_time,Change Date Time
+med_notes,student_id,Student Id
+med_notes,note,Note
+med_issued,dose_number,Dose Number
+med_issued,student_id,Student Id
+med_issued,event_type,Event Type
+med_issued,comment,Comment
+med_issued,change_date_time,Change Date Time
+med_issued,change_uid,Change Uid
+med_issued,initials,Initials
+med_issued,issued,Issued
+med_issued,med_code,Med Code
+reg_personal,at_risk,At Risk
+reg_personal,esl,ESL
+reg_personal,locker_number,Locker Number
+reg_personal,homeless_status,Homeless Status
+reg_personal,private_college,Private College
+reg_personal,show_alerts,Show Comments
+reg_personal,fee_status,Fee Status
+reg_personal,private_company,Private Company
+reg_personal,previous_id_asof,Previous Id Asof
+reg_personal,change_uid,Change Uid
+reg_personal,section_504_plan,504 Plan
+reg_personal,transfer_bldg_from,Building Transferred From
+reg_personal,migrant_id,Migrant ID
+reg_personal,ell_years,ELL Years
+reg_personal,migrant,Migrant
+reg_personal,change_date_time,Change Date Time
+reg_personal,meal_status,Meal Status
+reg_personal,has_iep,IEP
+reg_personal,residency_code,Residency
+reg_personal,locker_combination,Locker Combination
+reg_personal,birth_state,State of Birth
+reg_personal,immigrant,Immigrant
+reg_personal,ferpa_phone,FERPA Phone
+reg_personal,hispanic,Hispanic/Latino Ethnicity
+reg_personal,origin_country,Country of Origin
+reg_personal,private_individual,Private Individual
+reg_personal,birth_city,City of Birth
+reg_personal,student_id,Student Id
+reg_personal,state_report_id,State Reporting ID
+reg_personal,ssn,Social Security Number
+reg_personal,private_military,Private Military
+reg_personal,iep_integration,IEPPLUS Integration
+reg_personal,ethnic_code,Race
+reg_personal,citizen_status,Citizen Status
+reg_personal,ferpa_name,FERPA Name
+reg_personal,private_organizations,Private Organizations
+reg_personal,at_risk_last_calc,At Risk Last Calc
+reg_personal,birth_country,Country of Birth
+reg_personal,ferpa_photo,FERPA Photo
+reg_personal,mother_maiden_name,Mother's Maiden Name
+reg_personal,ferpa_address,FERPA Address
+reg_personal,classification,Classification
+reg_personal,academic_dis,Academically Disadvantaged
+reg_personal,iep_status,Iep Status
+reg_personal,fed_race_ethnic,Fed Race Ethnic
+reg_personal,has_ssp,Has Ssp
+reg_personal,previous_id,Previous ID
+reg_personal,fee_balance,Fee Balance
+reg_personal,at_risk_calc_ovr,At Risk Calc Ovr
+reg_personal,fee_status_ovr,Override Fee Status
+schd_stu_status,building,Building
+schd_stu_status,school_year,School Year
+schd_stu_status,request_status,Request Status
+schd_stu_status,change_date_time,Change Date Time
+schd_stu_status,schedule_status,Schedule Status
+schd_stu_status,student_id,Student Id
+schd_stu_status,schd_interval,Schd Interval
+schd_stu_status,change_uid,Change Uid
+reg_user-R-5090,field_value-1,Entry/Withdrawal
+reg_user-R-5090,field_value-2,ELL
+reg_user-R-5090,field_value-3,Assigned Grade
+reg_user-R-5090,field_value-4,Medicaid Eligible
+reg_user-R-5090,field_value-5,Medicaid Number
+reg_user-R-5090,field_value-6,Alternate Portfolio
+reg_user-R-5090,field_value-7,Transfer
+reg_user-R-5090,field_value-8,Secondary Trans Date
+reg_user-R-5090,field_value-9,Referral Date
+reg_user-R-5090,field_value-10,Person Referring
+reg_user-R-5090,field_value-11,Last Evaluation Date
+reg_user-R-5090,field_value-12,Eligibility Determining Date
+reg_user-R-5090,field_value-13,Annual Review Date
+reg_user-R-5090,field_value-14,Temporary Student
+reg_user-R-5090,field_value-31,School Choice
+reg_user-R-5090,field_value-32,School Choice Improvement
+reg_user-R-5090,field_value-33,School Choice LEA
+reg_user-R-5090,field_value-34,Special Ed Teacher
+reg_user-R-5090,field_value-35,Therapist (Speech/Other)
+reg_user-R-5090,field_value-16,Primary Disability
+reg_user-R-5090,field_value-17,Educational Placement
+reg_user-R-5090,field_value-18,Resident LEA
+reg_user-R-5090,field_value-19,Name of Provider
+reg_user-R-5090,field_value-20,Provider LEA
+reg_user-R-5090,field_value-21,Speech
+reg_user-R-5090,field_value-22,Date Speech Entered
+reg_user-R-5090,field_value-23,Date Speech Terminated
+reg_user-R-5090,field_value-24,Edu Placement Last Year
+reg_user-R-5090,field_value-25,Time Served Unit
+reg_user-R-5090,field_value-26,Time Served Amount
+reg_user-R-5090,field_value-27,Extended School YR
+reg_user-R-5090,field_value-29,Charter School
+reg_user-R-5090,field_value-30,Early Childhood Program
+reg_user-R-102,field_value-26,ACT 514 Military Dependent
+reg_user-R-102,field_value-27,Oyster ID
+reg_user-R-102,field_value-29,ACT 514 Military Branch
+reg_user-R-102,field_value-30,Medicaid Permission
+reg_user-R-102,field_value-18,Title I Eligible
+reg_user-R-102,field_value-23,Form 506
+reg_user-R-102,field_value-1,Distance/Miles from School
+reg_user-R-102,field_value-3,Birth Certificate Number
+reg_user-R-102,field_value-9,Birth Verified
+reg_user-R-102,field_value-13,Migrant Record
+reg_user-R-102,field_value-14,Medicaid Eligibility
+reg_user-R-102,field_value-17,Medicaid Number
+reg_user-R-102,field_value-24,Transported
+reg_user-R-102,field_value-25,Travel Code
+reg_user-R-102,field_value-2,Gifted/Talented
+reg_user-R-102,field_value-4,Preschool
+reg_user-R-102,field_value-5,ADM Part-Time Percentage
+reg_user-R-102,field_value-6,Smartcore Waiver
+reg_user-R-102,field_value-7,Facility Name
+reg_user-R-102,field_value-8,21st CCLC Program
+reg_user-R-102,field_value-10,Supp, Services (Do Not Use)
+reg_user-R-102,field_value-11,Consolidated School's LEA
+reg_user-R-102,field_value-12,Supp, Provider (Do Not Use)
+reg_user-R-102,field_value-15,Displaced District
+reg_user-R-102,field_value-16,State of Displaced District
+reg_user-R-102,field_value-32,SBHC
+reg_user-R-102,field_value-33,AAA Activity
+reg_user-R-102,field_value-35,CPR Training
+reg_user-R-102,field_value-37,New Student Delivered
+reg_user-R-102,field_value-39,Student Instructional Option
+reg_user-R-102,field_value-28,Twin
+reg_user-R-102,field_value-36,Alternate Pathway
+reg_user-R-102,field_value-40,Device Access Source
+reg_user-R-102,field_value-31,Unaccompanied Youth
+reg_user-R-102,field_value-41,Single Parent
+reg_user-R-102,field_value-42,Learning Device
+reg_user-R-102,field_value-43,Shared Device
+reg_user-R-102,field_value-44,Device Serial Number
+reg_user-R-102,field_value-34,Title III Eligible
+reg_user-R-102,field_value-38,Internet Access
+reg_user-R-102,field_value-45,Internet Type
+reg_user-R-102,field_value-46,Internet Performance
+reg_user-R-102,field_value-47,Internet Access Barrier
+reg_ethnicity,change_date_time,Change Date Time
+reg_ethnicity,student_id,Student Id
+reg_ethnicity,ethnicity_order,Ethnicity Order
+reg_ethnicity,change_uid,Change Uid
+reg_ethnicity,percentage,Percentage
+reg_ethnicity,ethnic_code,Ethnic Code
+reg_notes,student_id,Student Id
+reg_notes,appointment_id,Appointment Id
+reg_notes,student_alert_type,Student Alert Type
+reg_notes,entry_date_time,Entry Date Time
+reg_notes,private_flag,Private Flag
+reg_notes,note_text,Note Text
+reg_notes,change_date_time,Change Date Time
+reg_notes,publish_to_web,Publish To Web
+reg_notes,sensitive,Sensitive
+reg_notes,note_type,Note Type
+reg_notes,entry_uid,Entry Uid
+reg_notes,change_uid,Change Uid
+reg_stu_contact,mail_rc,Mail Rc
+reg_stu_contact,cust_guard,Cust Guard
+reg_stu_contact,contact_priority,Contact Priority
+reg_stu_contact,mail_disc,Mail Disc
+reg_stu_contact,mail_att,Mail Att
+reg_stu_contact,legal_guard,Legal Guard
+reg_stu_contact,mail_med,Mail Med
+reg_stu_contact,transport_to,Transport To
+reg_stu_contact,mail_fees,Mail Fees
+reg_stu_contact,change_date_time,Change Date Time
+reg_stu_contact,relation_code,Relation Code
+reg_stu_contact,mail_reg,Mail Reg
+reg_stu_contact,web_access,Web Access
+reg_stu_contact,contact_type,Contact Type
+reg_stu_contact,mail_ssp,Mail Ssp
+reg_stu_contact,student_id,Student Id
+reg_stu_contact,transport_from,Transport From
+reg_stu_contact,mail_ipr,Mail Ipr
+reg_stu_contact,living_with,Living With
+reg_stu_contact,upd_stu_eo_info,Upd Stu Eo Info
+reg_stu_contact,change_uid,Change Uid
+reg_stu_contact,mail_schd,Mail Schd
+reg_stu_contact,comments,Comments
+reg_travel,change_date_time,Change Date Time
+reg_travel,change_uid,Change Uid
+reg_travel,shuttle_stop,Shuttle Stop
+reg_travel,travel_type,Travel Type
+reg_travel,tuesday,Tuesday
+reg_travel,friday,Friday
+reg_travel,stop_number,Stop Number
+reg_travel,transport_distance,Transport Distance
+reg_travel,wednesday,Wednesday
+reg_travel,bus_number,Bus Number
+reg_travel,start_date,Start Date
+reg_travel,student_id,Student Id
+reg_travel,travel_trip,Travel Trip
+reg_travel,sunday,Sunday
+reg_travel,thursday,Thursday
+reg_travel,stop_description,Stop Description
+reg_travel,saturday,Saturday
+reg_travel,stop_time,Stop Time
+reg_travel,travel_segment,Travel Segment
+reg_travel,travel_direction,Travel Direction
+reg_travel,bus_route,Bus Route
+reg_travel,monday,Monday
+reg_travel,end_date,End Date
+reg_programs-arses,start_date-1,Meal Status Start Date
+reg_programs-arses,summer_school-1,Meal Status Summer School
+reg_programs-arses,program_value-1,Meal Status
+reg_programs-arses,end_date-1,Meal Status End Date
+reg_programs-arell,start_date-1,ELL Entry/Exit Start Date
+reg_programs-arell,summer_school-1,ELL Entry/Exit Summer School
+reg_programs-arell,program_value-1,ELL Entry/Exit
+reg_programs-arell,end_date-1,ELL Entry/Exit End Date
+reg_programs-argt,start_date-1,Gifted/Talented Start Date
+reg_programs-argt,summer_school-1,Gifted/Talented Summer School
+reg_programs-argt,program_value-1,Gifted/Talented
+reg_programs-argt,end_date-1,Gifted/Talented End Date
+reg_programs-ar_sa,start_date-1,School Age Program Start Date
+reg_programs-ar_sa,summer_school-1,School Age Program Summer School
+reg_programs-ar_sa,entry_reason-1,School Age Program Entry Reason
+reg_programs-ar_sa,program_value-1,School Age Program
+reg_programs-ar_sa,end_date-1,School Age Program End Date
+reg_programs-ar_sa,withdrawal_reason-1,School Age Program Withdrawal Reason
+reg_programs-arrs,start_date-1,Residency Start Date
+reg_programs-arrs,start_date-2,Send/Receive District LEA Start Date
+reg_programs-arrs,start_date-3,Send/Receive Building LEA Start Date
+reg_programs-arrs,summer_school-1,Residency Summer School
+reg_programs-arrs,summer_school-2,Send/Receive District LEA Summer School
+reg_programs-arrs,summer_school-3,Send/Receive Building LEA Summer School
+reg_programs-arrs,program_value-1,Residency
+reg_programs-arrs,program_value-2,Send/Receive District LEA
+reg_programs-arrs,program_value-3,Send/Receive Building LEA
+reg_programs-arrs,end_date-1,Residency End Date
+reg_programs-arrs,end_date-2,Send/Receive District LEA End Date
+reg_programs-arrs,end_date-3,Send/Receive Building LEA End Date

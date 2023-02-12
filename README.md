@@ -22,6 +22,11 @@ PS C:\Scripts> Set-CognosConfig -ConfigName "Judy" -username 0400judy
 Please provide your Cognos Password: ********************
 ````
 
+### Update Saved Password
+````
+Update-eSchoolPassword [[-ConfigName] <String>] [[-Password] <SecureString>]
+````
+
 ## Tutorial
 Coming Soon
 [![tutorial](/images/youtube_thumbnail.jpg)](https://www.youtube.com/@camtechcs)
@@ -90,12 +95,39 @@ Get-eSPStudents [-InActive] [-Graduated] [-All]
 Get-eSPStudents -Grade '01' -IncludeTable reg_academic,reg_notes
 ````
 
-### Update Saved Password
+
+### List Staff Catalog
 ````
-Update-eSchoolPassword [[-ConfigName] <String>] [[-Password] <SecureString>]
+Get-eSPStaffCatalog [[-Building] <Int32>]
 ````
 
-# Definition Creator
+### List eSchool Users
+````
+Get-eSPSecUsers
+````
+
+### List eSchool Security Roles
+````
+Get-eSPSecRoles
+````
+
+### List Master Schedule
+````
+Get-eSPMasterSchedule
+````
+
+# PreDefined Upload/Download Defininitions
+Built in download definitions will start with ESMD and upload defintions will start with ESMU. For the last character we will use [0-9] then [A-Z].
+- ESMD0 - "eSchoolModule - Email Download Definition" - Download Contact_id,Student_id, and Email. Then you can process to fix them.
+- ESMD1 - "eSchoolModule - Guardian Duplication" - Download all the information needed to dedupe guardian contacts.
+
+- ESMU0 - "eSchoolModule - Email Upload Definition" - Upload Student Emails by Contact_id,Email
+- ESMU1 - "eSchoolModule - Web Access Upload Definition" - Enable Web Access for Contacts
+- ESMU2 - "eSchoolModule - Move Duplicate Guardian Priority" - Move Duplicate Guardians to Priority of 99
+- ESMU2 - "eSchoolModule - Connect Duplicate Guardians" - Connect the Existing Contacts to Students
+- ESMU3 - "eSchoolModule - Merge Duplicate Guardian Phone Numbers" - Because we don't want lost data.
+
+## Definition Creator
 Think Bigger!
 ````
 $newDefinition = New-espDefinitionTemplate -InterfaceId STUID -Description "Pull Student Id Numbers"
@@ -133,7 +165,7 @@ Invoke-eSPDownloadDefinition -InterfaceId STUID -Wait
 $studentIds = Get-eSPFile -FileName "studentids.csv" -AsObject | Select-Object -First 5
 ````
 
-# Bulk Export Download Definitions
+## Bulk Export Download Definitions
 Think even bigger!
 
 Every row will have a record delimiter of '#!#'.  This is because eSchool doesn't properly escape characters/carriage returns/line feeds.
@@ -185,9 +217,6 @@ $reg_notes | Out-File ".\reg_notes.csv"
 (Get-eSPFile -FileName reg_notes.csv -Raw) -replace "`n",'{LF}' -replace "`r",'{CR}' -replace '\|#!#{CR}{LF}',"`r`n" | Out-File ".\reg_notes.csv" -NoNewLine
 ````
 
-# What Now?
-PROFIT!
-
 ## Import Into Database
 
 ### Microsoft SQL Server
@@ -224,3 +253,6 @@ $TablesToExport | ForEach-Object {
 	& csvsql.exe -I --db "mysql+mysqlconnector://$($dbConn.username):$($dbConn.password)@$($dbConn.hostname)/$($dbConn.dbname)?charset=utf8mb4" --insert --overwrite --tables "import_$($PSItem)" "$($PSItem).csv"
 }
 ````
+
+# What Now?
+PROFIT?

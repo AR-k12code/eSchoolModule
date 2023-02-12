@@ -1,0 +1,77 @@
+table,colomn,description
+schd_ms,gender_restriction,Gender Restriction
+schd_ms,department,Department
+schd_ms,block_type,Block Type
+schd_ms,track,Track
+schd_ms,votec,Votec
+schd_ms,fee,Fee
+schd_ms,description,Description
+schd_ms,maximum_seats,Maximum Seats
+schd_ms,lock,Lock
+schd_ms,duration_type,Duration Type
+schd_ms,classify_num_or_per,Classify Num Or Per
+schd_ms,state_crs_equiv,State Crs Equiv
+schd_ms,course_section,Course Section
+schd_ms,subj_area_credit,Subj Area Credit
+schd_ms,nces_code,Nces Code
+schd_ms,study_hall,Study Hall
+schd_ms,average_type,Average ID
+schd_ms,classify_stus_max,Classify Stus Max
+schd_ms,course_credit_basis,Course Credit Basis
+schd_ms,building,Building
+schd_ms,course,Course
+schd_ms,category_type,Category Type
+schd_ms,change_uid,Change Uid
+schd_ms,same_teacher,Same Teacher
+schd_ms,change_date_time,Change Date Time
+schd_ms,gender_restriction,Gender Restriction
+schd_ms,department,Department
+schd_ms,block_type,Block Type
+schd_ms,track,Track
+schd_ms,votec,Votec
+schd_ms,fee,Fee
+schd_ms,description,Description
+schd_ms,maximum_seats,Maximum Seats
+schd_ms,lock,Lock
+schd_ms,duration_type,Duration Type
+schd_ms,classify_num_or_per,Classify Num Or Per
+schd_ms,state_crs_equiv,State Crs Equiv
+schd_ms,course_section,Course Section
+schd_ms,subj_area_credit,Subj Area Credit
+schd_ms,nces_code,Nces Code
+schd_ms,study_hall,Study Hall
+schd_ms,average_type,Average ID
+schd_ms,classify_stus_max,Classify Stus Max
+schd_ms,course_credit_basis,Course Credit Basis
+schd_ms,building,Building
+schd_ms,course,Course
+schd_ms,category_type,Category Type
+schd_ms,change_uid,Change Uid
+schd_ms,same_teacher,Same Teacher
+schd_ms,change_date_time,Change Date Time
+schd_ms_session,incld_passing_time,Incld Passing Time
+schd_ms_session,take_attendance,Take Attendance
+schd_ms_session,receive_mark,Receive Mark
+schd_ms_session,change_uid,Change Uid
+schd_ms_session,start_period,Start Period
+schd_ms_session,end_period,End Period
+schd_ms_session,course_level,Course Level
+schd_ms_session,use_focus,Use Focus
+schd_ms_session,credit,Credit
+schd_ms_session,primary_staff_id,Primary Staff
+schd_ms_session,change_date_time,Change Date Time
+schd_ms_session,description,Description
+schd_ms_session,room_id,Room
+schd_ms_session,incld_passing_time,Incld Passing Time
+schd_ms_session,take_attendance,Take Attendance
+schd_ms_session,receive_mark,Receive Mark
+schd_ms_session,change_uid,Change Uid
+schd_ms_session,start_period,Start Period
+schd_ms_session,end_period,End Period
+schd_ms_session,course_level,Course Level
+schd_ms_session,use_focus,Use Focus
+schd_ms_session,credit,Credit
+schd_ms_session,primary_staff_id,Primary Staff
+schd_ms_session,change_date_time,Change Date Time
+schd_ms_session,description,Description
+schd_ms_session,room_id,Room

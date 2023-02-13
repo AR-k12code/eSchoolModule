@@ -1,5 +1,6 @@
 test.ps1
 *.csv
 *.txt
+*.sqlite3
 testing/**
 !resources/**

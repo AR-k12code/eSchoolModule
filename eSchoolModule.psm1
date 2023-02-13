@@ -2297,7 +2297,7 @@ function New-eSPGuardianDefinitions {
         -TableName "reg_stu_contact" `
         -Description "eSchoolModule - Move Duplicate Guardian Priority"
 
-    $index = 0
+    $index = 1
     @("CONTACT_ID","STUDENT_ID","CONTACT_PRIORITY","CONTACT_TYPE") | ForEach-Object {
         $newDefinition.UploadDownloadDefinition.InterfaceHeaders[0].InterfaceDetails +=	New-eSPDefinitionColumn `
             -InterfaceId "ESMU2" `
@@ -2326,8 +2326,8 @@ function New-eSPGuardianDefinitions {
         -TableName "reg_stu_contact" `
         -Description "eSchoolModule - Connect Duplicate Guardians"
 
-    $index = 0
-    @("CONTACT_ID","STUDENT_ID","CONTACT_TYPE","CONTACT_PRIORITY","LIVING_WITH","WEB_ACCESS","TRANSPORT_TO","TRANSPORT_FROM","MAIL_ATT","MAIL_DISC","MAIL_FEES","MAIL_IPR","MAIL_MED","MAIL_RC","MAIL_REG","MAIL_SCHD","MAIL_SSP","LEGAL_GUARD","CUST_GUARD","UPD_STU_EO_INFO") | ForEach-Object {
+    $index = 1
+    @("CONTACT_ID","COMMENTS","CONTACT_PRIORITY","CONTACT_TYPE","CUST_GUARD","DISTRICT","LEGAL_GUARD","LIVING_WITH","MAIL_ATT","MAIL_DISC","MAIL_FEES","MAIL_IPR","MAIL_MED","MAIL_RC","MAIL_REG","MAIL_SCHD","MAIL_SSP","RELATION_CODE","ROW_IDENTITY","STUDENT_ID","TRANSPORT_FROM","TRANSPORT_TO","UPD_STU_EO_INFO","WEB_ACCESS") | ForEach-Object {
         $newDefinition.UploadDownloadDefinition.InterfaceHeaders[0].InterfaceDetails +=	New-eSPDefinitionColumn `
             -InterfaceId "ESMU3" `
             -HeaderId 1 `
@@ -2358,7 +2358,7 @@ function New-eSPGuardianDefinitions {
         -TableName "reg_contact_phone" `
         -Description "eSchoolModule - Merge Duplicate Guardian Phone Numbers"
 
-    $index = 0
+    $index = 1
     @("CONTACT_ID","DISTRICT","PHONE","PHONE_EXTENSION","PHONE_LISTING","PHONE_PRIORITY","PHONE_TYPE","SIF_REFID") | ForEach-Object {
         $newDefinition.UploadDownloadDefinition.InterfaceHeaders[0].InterfaceDetails +=	New-eSPDefinitionColumn `
             -InterfaceId "ESMU4" `

@@ -170,14 +170,13 @@ function Connect-ToeSchool {
         $baseUrl = "https://eschool20.esp.k12.ar.us/eSchoolPLUS20"
     }
 
-    $loginUrl = $baseUrl + '/Account/LogOn'
-    $envUrl = $baseUrl + '/Account/SetEnvironment/SessionStart'
-    
     $username = $config.username
     $password = (New-Object pscredential "user",($config.password | ConvertTo-SecureString)).GetNetworkCredential().Password
     
     #Get Verification Token.
-    $response = Invoke-WebRequest -Uri $loginUrl -SessionVariable eSchoolSession
+    $response = Invoke-WebRequest `
+        -Uri "$($baseUrl)/Account/LogOn" `
+        -SessionVariable eSchoolSession
 
     #Login
     $params = @{
@@ -186,11 +185,15 @@ function Connect-ToeSchool {
         '__RequestVerificationToken' = $response.InputFields[0].value
     }
 
-    $response2 = Invoke-WebRequest -Uri $loginUrl -WebSession $eSchoolSession -Method POST -Body $params -ErrorAction Stop
+    $response2 = Invoke-WebRequest `
+        -Uri "$($baseUrl)/Account/LogOn" `
+        -WebSession $eSchoolSession `
+        -Method POST `
+        -Body $params `
 
-    if (($response2.ParsedHtml.title -eq "Login") -or ($response2.StatusCode -ne 200)) {
-        Write-Error "Failed to login."
-    }
+    # if (($response2.ParsedHtml.title -eq "Login") -or ($response2.StatusCode -ne 200)) {
+    #     Write-Error "Failed to login."
+    # }
 
     $fields = $response2.InputFields | Group-Object -Property name -AsHashTable
     if (-Not($Database)) {
@@ -227,13 +230,22 @@ function Connect-ToeSchool {
 
     Write-Verbose ($params2 | ConvertTo-Json)
 
-    $response3 = Invoke-WebRequest -Uri $envUrl -WebSession $eSchoolSession -Method POST -Body $params2 -ContentType "application/x-www-form-urlencoded"
-    
-    if ($response3.StatusCode -ne 200) {
-        Write-Error "Failed to Set Environment."
-        #Throw "Failed to Set Environment."
-    } else {
-        Write-Output "Connected to eSchool Server $($fields.'ServerName'.value)"
+    $response3 = Invoke-WebRequest `
+        -Uri "$($baseUrl)/Account/SetEnvironment/SessionStart" `
+        -WebSession $eSchoolSession `
+        -Method POST `
+        -Body $params2 `
+        -ContentType "application/x-www-form-urlencoded"
+
+    #verify we set the environment/selected a valid district.
+    try {
+
+        $response4 = Invoke-RestMethod `
+            -Uri "$($baseUrl)/Task/TaskAndReportData?includeTaskCount=false&includeReports=false&maximumNumberOfReports=1&includeTasks=false&runningTasksOnly=false" `
+            -WebSession $eSchoolSession `
+            -MaximumRedirection 0
+
+        Write-Host "Connected to eSchool Server $($fields.'ServerName'.value)" -ForegroundColor Green
         $global:eSchoolSession = @{
             Session = $eschoolSession
             Username = $username
@@ -243,12 +255,11 @@ function Connect-ToeSchool {
                 ConfigName = $ConfigName
                 TrainingSite = $TrainingSite ? $true : $false
             }
-            
         }
-
-        return
-    }
-
+    } catch {
+        Write-Error "Failed to Set Environment."
+        Throw
+    }   
 }
 
 function Disconnect-FromeSchool {

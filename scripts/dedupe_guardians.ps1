@@ -88,7 +88,7 @@ if ($existingDuplicates = Invoke-SqlQuery -Query "SELECT * FROM GUARD_REG_STU_CO
     Write-Error "You have already attached duplicate guardians with CONTACT_PRIORITY of 99. You must fix those before running this script again."
 
     $existingDuplicates | ForEach-Object {
-        Write-Host "https://eschool20.esptrn.k12.ar.us/eSchoolPLUS/Student/Registration/ContactDetail?contactId=$($PSitem.CONTACT_ID)&contactType=Guardian&PageEditMode=Modify&ContactEditMode=Modify&StudentId=$($PSItem.STUDENT_ID)"
+        Write-Host "$($eSchoolSession.Url)Student/Registration/ContactDetail?contactId=$($PSitem.CONTACT_ID)&contactType=Guardian&PageEditMode=Modify&ContactEditMode=Modify&StudentId=$($PSItem.STUDENT_ID)"
     }
 
     exit 1

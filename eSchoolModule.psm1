@@ -2327,7 +2327,7 @@ function New-eSPGuardianDefinitions {
         -Description "eSchoolModule - Connect Duplicate Guardians"
 
     $index = 1
-    @("CONTACT_ID","COMMENTS","CONTACT_PRIORITY","CONTACT_TYPE","CUST_GUARD","DISTRICT","LEGAL_GUARD","LIVING_WITH","MAIL_ATT","MAIL_DISC","MAIL_FEES","MAIL_IPR","MAIL_MED","MAIL_RC","MAIL_REG","MAIL_SCHD","MAIL_SSP","RELATION_CODE","ROW_IDENTITY","STUDENT_ID","TRANSPORT_FROM","TRANSPORT_TO","UPD_STU_EO_INFO","WEB_ACCESS") | ForEach-Object {
+    @("CONTACT_ID","COMMENTS","CONTACT_PRIORITY","CONTACT_TYPE","CUST_GUARD","DISTRICT","LEGAL_GUARD","LIVING_WITH","MAIL_ATT","MAIL_DISC","MAIL_FEES","MAIL_IPR","MAIL_MED","MAIL_RC","MAIL_REG","MAIL_SCHD","MAIL_SSP","RELATION_CODE","STUDENT_ID","TRANSPORT_FROM","TRANSPORT_TO","UPD_STU_EO_INFO","WEB_ACCESS") | ForEach-Object {
         $newDefinition.UploadDownloadDefinition.InterfaceHeaders[0].InterfaceDetails +=	New-eSPDefinitionColumn `
             -InterfaceId "ESMU3" `
             -HeaderId 1 `

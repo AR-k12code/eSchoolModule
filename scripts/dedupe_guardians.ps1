@@ -7,6 +7,11 @@
 
 #>
 
+Param(
+    [Parameter(Mandatory=$false)][switch]$MatchOnAddress,
+    [Parameter(Mandatory=$false)][switch]$AllowBlankEmail
+)
+
 if (-Not(Test-Path .\archives)) { New-Item -ItemType Directory -Path .\archives }
 
 $RequiredFiles = @(
@@ -79,8 +84,28 @@ $RequiredFiles | ForEach-Object {
 
 }
 
+if ($existingDuplicates = Invoke-SqlQuery -Query "SELECT * FROM GUARD_REG_STU_CONTACT WHERE CONTACT_PRIORITY = 99") {
+    Write-Error "You have already attached duplicate guardians with CONTACT_PRIORITY of 99. You must fix those before running this script again."
+
+    $existingDuplicates | ForEach-Object {
+        Write-Host "https://eschool20.esptrn.k12.ar.us/eSchoolPLUS/Student/Registration/ContactDetail?contactId=$($PSitem.CONTACT_ID)&contactType=Guardian&PageEditMode=Modify&ContactEditMode=Modify&StudentId=$($PSItem.STUDENT_ID)"
+    }
+
+    exit 1
+}
+
 #a hashtable we can reference later.
 $allGuardians = Invoke-SqlQuery -Query "SELECT * FROM GUARD_REG_CONTACT WHERE CONTACT_ID IN (SELECT CONTACT_ID FROM GUARD_REG_STU_CONTACT WHERE CONTACT_TYPE = 'G')" | Group-Object -Property CONTACT_ID -AsHashTable
+
+if (-Not($AllowBlankEmail)) {
+    $emailFilter = " AND EMAIL != '' "
+}
+
+if ($MatchOnAddress) {
+    $groupBy = @("FIRST_NAME","LAST_NAME","EMAIL","ADDRESS")
+} else {
+    $groupBy = @("FIRST_NAME","LAST_NAME","EMAIL")
+}
 
 $guardianDuplicatesByEmail = Invoke-SqlQuery -Query "SELECT
 	GUARD_REG_CONTACT.CONTACT_ID,
@@ -89,18 +114,20 @@ $guardianDuplicatesByEmail = Invoke-SqlQuery -Query "SELECT
     COUNT(GUARD_REG_STU_CONTACT.STUDENT_ID) AS STUDENT_COUNT,
 	GUARD_REG_CONTACT.FIRST_NAME,
 	GUARD_REG_CONTACT.LAST_NAME,
-	GUARD_REG_CONTACT.EMAIL
+	GUARD_REG_CONTACT.EMAIL,
+	(GUARD_REG_CONTACT.STREET_NUMBER || ' ' || GUARD_REG_CONTACT.STREET_NAME) AS ADDRESS
 FROM GUARD_REG_CONTACT
 LEFT JOIN GUARD_REG_STU_CONTACT ON GUARD_REG_CONTACT.CONTACT_ID = GUARD_REG_STU_CONTACT.CONTACT_ID
 LEFT JOIN GUARD_REG ON GUARD_REG_STU_CONTACT.STUDENT_ID = GUARD_REG.STUDENT_ID
 WHERE
 	GUARD_REG_CONTACT.CONTACT_ID IN (SELECT CONTACT_ID FROM GUARD_REG_STU_CONTACT WHERE CONTACT_TYPE = 'G')
-AND 
-	EMAIL != ''
+$($emailFilter)
 AND
 	GUARD_REG.CURRENT_STATUS = 'A'
+AND
+	GUARD_REG_STU_CONTACT.CONTACT_PRIORITY != 99
 GROUP BY GUARD_REG_CONTACT.CONTACT_ID
-ORDER BY EMAIL" | Group-Object -Property FIRST_NAME,LAST_NAME,EMAIL | Where-Object { $PSitem.Count -ge 2 }
+ORDER BY EMAIL" | Group-Object -Property $groupBy | Where-Object { $PSitem.Count -ge 2 }
 
 $guardianDuplicatesByEmail | ForEach-Object {
 
@@ -144,6 +171,7 @@ $guardianDuplicatesByEmail | ForEach-Object {
                     CONTACT_PRIORITY = $secondarySTUConnection.CONTACT_PRIORITY
                     CONTACT_TYPE = $secondarySTUConnection.CONTACT_TYPE
                     CUST_GUARD = $secondarySTUConnection.CUST_GUARD
+                    DISTRICT = $secondarySTUConnection.DISTRICT
                     LEGAL_GUARD = $secondarySTUConnection.LEGAL_GUARD
                     LIVING_WITH = $secondarySTUConnection.LIVING_WITH
                     MAIL_ATT = $secondarySTUConnection.MAIL_ATT
@@ -205,6 +233,7 @@ $guardianDuplicatesByEmail | ForEach-Object {
             $PhoneNumbersForPrimaryGuardian.Add(
                 [PSCustomObject]@{
                     CONTACT_ID = $primaryContactId
+                    DISTRICT = $phoneNumber.DISTRICT
                     PHONE = $phoneNumber.PHONE
                     PHONE_EXTENSION = $phoneNumber.PHONE_EXTENSION
                     PHONE_LISTING = $phoneNumber.PHONE_LISTING

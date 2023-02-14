@@ -254,5 +254,28 @@ $TablesToExport | ForEach-Object {
 }
 ````
 
+# Example Scripts
+Examples are in the scripts folder.
+
+## Upload_Student_Emails.ps1
+This script should help you upload correct email addresses based on your Active Directory field that contains the Student ID number. Default is EmployeeNumber. Some districts are EmployeeID.
+````
+.\Upload_Student_Emails.ps1 -ADField EmployeeNumber -SkipUpload -RunMode V -EnableWebAccess -EnableGuardianWebAccess -GuardianPriority 1
+````
+
+## Create_Bulk_Table_Definitions.ps1
+This script will create download defintion for the REG, MR, SCHD, and ATT tables.  This will include different definitions for the complete table, 3 hour differential, 12 hour differential, 24 hour differential, 1 month differential, 1 year differential. Differentials are limited to the current school year.
+
+## dedupe_guardians.ps1
+DANGER WILL ROBINSON! This script is a proposal on deduping guardians. Read it, Understand it, Read it again, Then Understand some more.  By default the upload definition is set to Verification mode. It should NOT make any changes when you run it however we make no guarantees you didn't change something. Read it again.
+
+- Duplicate guardians will be moved to a priority of 99.
+- The primary contact ID will then be attached in the same priority, with all the existing data, as the duplciate was before it was moved to 99.
+- If the duplicates have additional phone numbers they will be tied to the primary Contact ID for the duplicates. IE. The duplicate had a work number that the original didn't. It will be added.
+
+````
+dedupe_guardians.ps1 -MatchOnAddress -AllowBlankEmail
+````
+
 # What Now?
-PROFIT?
+PROFIT?!

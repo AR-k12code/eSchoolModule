@@ -36,7 +36,7 @@ try {
     }
 
     #start the download for the files we need.
-    Invoke-eSPDownloadDefinition -InterfaceID ESMD0 -Wait
+    Invoke-eSPDownloadDefinition -InterfaceID ESMD0 -ActiveStudentsOnly -Wait
 
     $eSPEmails = Get-eSPFile -FileName "student_email_download.csv" -AsObject 
 

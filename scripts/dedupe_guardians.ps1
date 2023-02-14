@@ -36,7 +36,7 @@ Invoke-eSPDownloadDefinition -Interface ESMD1 -Wait
 
 $Files = Get-eSPFileList | Where-Object {
     $PSItem.RawFileName -like "GUARD_*" -and
-    $PSitem.ModifiedDate -gt $startTime -and` 
+    $PSitem.ModifiedDate -gt $startTime -and
     $PSItem.FileExtension -eq ".csv"
 }
 
@@ -48,7 +48,7 @@ $RequiredFiles | ForEach-Object {
 
 #Open-SQLiteConnection -DataSource ":memory:"
 
-Open-SQLiteConnection -DataSource ".\test.sqlite3"
+Open-SQLiteConnection -DataSource ".\guardians.sqlite3"
 
 $RequiredFiles | ForEach-Object {
 

@@ -48,7 +48,7 @@ Clear-eSPFailedTask [-TaskKey] <String>
 
 ### List Files
 ````
-Get-eSPFileLIst
+Get-eSPFileList
 ````
 
 ### Get a File

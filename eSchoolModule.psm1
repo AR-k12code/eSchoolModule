@@ -621,15 +621,46 @@ function Invoke-eSPUploadDefinition {
 
             do {
 
-                $response2 = Get-eSPTaskList
+                $tasks = Get-eSPTaskList -SilentErrors
 
-                if ($response2.InActiveTasks.TaskName -contains $InterfaceID) {
+                if ($tasks.InActiveTasks | 
+                    Where-Object { $PSitem.TaskName -eq $InterfaceID -and 
+                        (
+                            #within 1 min either direction. More than that and you're probably doing something wrong.
+                            ($dateTime.AddMinutes(-1) -le (Get-Date "$($PSitem.RunTime)")) -and
+                            ($dateTime.AddMinutes(1) -ge (Get-Date "$($PSitem.RunTime)"))
+                        )
+                     }) {
                     #still waiting to run.
-                    Write-Verbose "Waiting to run task."
-                } elseif ($response2.ActiveTasks.TaskName -contains $InterfaceID) {
+                    Write-Verbose "Waiting for task to run."
+                } elseif ($task = $tasks.ActiveTasks | 
+                    Where-Object { $PSitem.TaskName -eq $InterfaceID -and 
+                        (
+                            #within 1 min either direction. More than that and you're probably doing something wrong.
+                            ($dateTime.AddMinutes(-1) -le (Get-Date "$($PSitem.RunTime)")) -and
+                            ($dateTime.AddMinutes(1) -ge (Get-Date "$($PSitem.RunTime)"))
+                        )
+                    }) {
+                    
                     Write-Verbose "Task is currently running."
+                    
+                    if ($task.ErrorOccurred -eq 'True') {
+                        #Write-Error "Failed to run task."
+                        Throw "Failed to run task"
+                    }
+
+                    #$progressSplit = $task.ProgressDescription | Select-String -Pattern "\((\d+) of (\d+)\)" | Select-Object -ExpandProperty Matches | Select-Object -ExpandProperty Groups
+                    try {
+                        $percentage = [math]::Floor( ($($task.RecordsProcessed)/$($task.TotalRecords) * 100) )
+                        #$percentage = [math]::Floor( ($($progressSplit[1].Value)/$($progressSplit[2].Value) * 100) )
+                        if ($percentage) {
+                            Write-Progress -Activity "Processing $($task.TaskName)" -Status "$($task.ProgressDescription)" -PercentComplete $percentage
+                        }
+                    } catch { <# do nothing #> }
+
                 } else {
                     $complete = $true
+                    Write-Progress -Activity "Processing $($task.TaskName)" -Status "Ready" -Completed
                 }
 
                 Start-Sleep -Seconds 5
@@ -1021,6 +1052,7 @@ function Invoke-eSPExecuteSearch {
 
     }
 
+    Write-Progress -Activity "Retrieving" -Status "Ready" -Completed
     return $results
 
 }

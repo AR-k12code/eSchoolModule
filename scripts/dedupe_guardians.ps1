@@ -267,6 +267,6 @@ if ($primaryGuardianToReplaceSecondary) {
     Submit-eSPFile duplicate_guardians_fix.csv
 }
 
-Invoke-eSPUploadDefinition -InterfaceID ESMU2 -RunMode V #Guardian to 99
-Invoke-eSPUploadDefinition -InterfaceID ESMU3 -RunMode V -InsertNewRecords #Connect Primary Guardian where duplicate was.
-Invoke-eSPUploadDefinition -InterfaceID ESMU4 -RunMode V -InsertNewRecords #Insert updated or missing phone records from duplicates to primary.
+Invoke-eSPUploadDefinition -InterfaceID ESMU2 -RunMode V -Wait #Guardian to 99
+Invoke-eSPUploadDefinition -InterfaceID ESMU3 -RunMode V -InsertNewRecords -Wait #Connect Primary Guardian where duplicate was.
+Invoke-eSPUploadDefinition -InterfaceID ESMU4 -RunMode V -InsertNewRecords -Wait #Insert updated or missing phone records from duplicates to primary.

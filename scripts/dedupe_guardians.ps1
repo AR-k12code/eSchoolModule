@@ -1,4 +1,5 @@
 #Requires -Module eSchoolModule,SimplySQL
+#Requires -Version 7
 
 <#
 
@@ -9,7 +10,8 @@
 
 Param(
     [Parameter(Mandatory=$false)][switch]$MatchOnAddress,
-    [Parameter(Mandatory=$false)][switch]$AllowBlankEmail
+    [Parameter(Mandatory=$false)][switch]$AllowBlankEmail,
+    [Parameter(Mandatory=$false)][switch]$SkipRunningDownloadDefinition
 )
 
 if (-Not(Test-Path .\archives)) { New-Item -ItemType Directory -Path .\archives }
@@ -29,20 +31,22 @@ $MoveGuardiansTo99 = [System.Collections.Generic.List[Object]]::new() #secondary
 $PhoneNumbersForPrimaryGuardian = [System.Collections.Generic.List[Object]]::new() #phone numbers on the secondary contacts that either don't conflict or are newer.
 $primaryGuardianToReplaceSecondary = [System.Collections.Generic.List[Object]]::new() #connect the primary guardian by replacing the secondary guardians with the exact same priority and connection information.
 
-$startTime = Get-Date
+if (-Not($SkipRunningDownloadDefinition)) {
+    $startTime = Get-Date
 
-Write-Host "Starting Download Definition ESMD1..."
-Invoke-eSPDownloadDefinition -Interface ESMD1 -Wait
+    Write-Host "Starting Download Definition ESMD1..."
+    Invoke-eSPDownloadDefinition -Interface ESMD1 -Wait
 
-$Files = Get-eSPFileList | Where-Object {
-    $PSItem.RawFileName -like "GUARD_*" -and
-    $PSitem.ModifiedDate -gt $startTime -and
-    $PSItem.FileExtension -eq ".csv"
-}
+    $Files = Get-eSPFileList | Where-Object {
+        $PSItem.RawFileName -like "GUARD_*" -and
+        $PSitem.ModifiedDate -gt $startTime -and
+        $PSItem.FileExtension -eq ".csv"
+    }
 
-$RequiredFiles | ForEach-Object {
-    if ($Files.RawFileName -notcontains "$($PSItem).csv") {
-        Throw "Failed to find $($PSitem) on eSchool Servers."
+    $RequiredFiles | ForEach-Object {
+        if ($Files.RawFileName -notcontains "$($PSItem).csv") {
+            Throw "Failed to find $($PSitem) on eSchool Servers."
+        }
     }
 }
 
@@ -84,7 +88,7 @@ $RequiredFiles | ForEach-Object {
 
 }
 
-if ($existingDuplicates = Invoke-SqlQuery -Query "SELECT * FROM GUARD_REG_STU_CONTACT WHERE CONTACT_PRIORITY = 99") {
+if ($existingDuplicates = Invoke-SqlQuery -Query "SELECT * FROM GUARD_REG_STU_CONTACT WHERE CONTACT_PRIORITY = 99 AND CONTACT_TYPE = 'G'") {
     Write-Error "You have already attached duplicate guardians with CONTACT_PRIORITY of 99. You must fix those before running this script again."
 
     $existingDuplicates | ForEach-Object {
@@ -94,7 +98,7 @@ if ($existingDuplicates = Invoke-SqlQuery -Query "SELECT * FROM GUARD_REG_STU_CO
     exit 1
 }
 
-#a hashtable we can reference later.
+#a hashtable we can reference later if neeeded. (not currently needed.)
 $allGuardians = Invoke-SqlQuery -Query "SELECT * FROM GUARD_REG_CONTACT WHERE CONTACT_ID IN (SELECT CONTACT_ID FROM GUARD_REG_STU_CONTACT WHERE CONTACT_TYPE = 'G')" | Group-Object -Property CONTACT_ID -AsHashTable
 
 if (-Not($AllowBlankEmail)) {
@@ -115,12 +119,13 @@ $guardianDuplicatesByEmail = Invoke-SqlQuery -Query "SELECT
 	GUARD_REG_CONTACT.FIRST_NAME,
 	GUARD_REG_CONTACT.LAST_NAME,
 	GUARD_REG_CONTACT.EMAIL,
-	(GUARD_REG_CONTACT.STREET_NUMBER || ' ' || GUARD_REG_CONTACT.STREET_NAME) AS ADDRESS
+	(GUARD_REG_CONTACT.STREET_NUMBER || ' ' || GUARD_REG_CONTACT.STREET_NAME) AS ADDRESS,
+    GUARD_REG_STU_CONTACT.CONTACT_TYPE
 FROM GUARD_REG_CONTACT
 LEFT JOIN GUARD_REG_STU_CONTACT ON GUARD_REG_CONTACT.CONTACT_ID = GUARD_REG_STU_CONTACT.CONTACT_ID
 LEFT JOIN GUARD_REG ON GUARD_REG_STU_CONTACT.STUDENT_ID = GUARD_REG.STUDENT_ID
 WHERE
-	GUARD_REG_CONTACT.CONTACT_ID IN (SELECT CONTACT_ID FROM GUARD_REG_STU_CONTACT WHERE CONTACT_TYPE = 'G')
+	GUARD_REG_STU_CONTACT.CONTACT_TYPE = 'G'
 $($emailFilter)
 AND
 	GUARD_REG.CURRENT_STATUS = 'A'

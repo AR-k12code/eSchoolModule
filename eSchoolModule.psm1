@@ -766,6 +766,7 @@ function Get-eSPStudents {
 
     [CmdletBinding(DefaultParametersetName="default")]
     Param(
+        [Parameter(Mandatory=$false,ParameterSetName="StudentID")][int]$StudentID, #ID of the Building
         [Parameter(Mandatory=$false,ParameterSetName="default")][int]$Building, #ID of the Building
         [Parameter(Mandatory=$false)]
         [ValidateSet('PK','KA','KF','KP','SS','SM','EE','GG','01','02','03','04','05','06','07','08','09','10','11','12')]
@@ -807,6 +808,12 @@ function Get-eSPStudents {
     if ($grade) {
         $params += New-eSPSearchPredicate -index $index -Table REG -ColumnName GRADE -Operator In -DataType Char -Values "$($grade -join ',')"
         $index++
+    }
+
+    if ($StudentID) {
+        #when searching for a single student ID lets go ahead and add reg_academic.
+        $params += New-eSPSearchPredicate -index $index -Table REG -ColumnName STUDENT_ID -Operator Equal -DataType Int -Values $StudentID
+        $IncludeTables += @("reg","reg_academic")
     }
 
     # Here we need to start adding the SearchListField from REGMAINT. See the document in resources (incomplete).

@@ -34,10 +34,11 @@
     #RequiredModules = @()
     
     # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-    FunctionsToExport = 'Update-eSchoolModule','Assert-eSPSession','Clear-eSPFailedTask','Connect-ToeSchool','Disconnect-FromeSchool',
-        'Get-eSPFile','Get-eSPFileList','Get-eSPSchools','Get-eSPStudentDetails','Get-eSPStudents','Get-eSPTaskList',
-        'Invoke-eSPDownloadDefinition','Invoke-eSPUploadDefinition','Remove-eSchoolConfig','Set-eSchoolConfig',
-        'Show-eSchoolConfig','Submit-eSPFile','Update-eSchoolPassword'
+    FunctionsToExport = "Assert-eSPSession","Clear-eSPFailedTask","Connect-ToeSchool","Disconnect-FromeSchool","Get-eSPDefinitionsUpdates","Get-eSPFile","Get-eSPFileList",
+        "Get-eSPMasterSchedule","Get-eSPSchools","Get-eSPSecRoles","Get-eSPSecUsers","Get-eSPStaffCatalog","Get-eSPStudents","Get-eSPTaskList","Invoke-eSPDownloadDefinition",
+        "Invoke-eSPExecuteSearch","Invoke-eSPUploadDefinition","New-eSPBulkDownloadDefinition","New-eSPDefinition","New-eSPDefinitionColumn","New-eSPDefinitionTemplate",
+        "New-eSPEmailDefinitions","New-eSPGuardianDefinitions","New-eSPInterfaceHeader","New-eSPSearchListField","New-eSPSearchPredicate","Receive-eSPAdditionalREGMAINTTables",
+        "Remove-eSchoolConfig","Remove-eSPInterfaceId","Set-eSchoolConfig","Show-eSchoolConfig","Submit-eSPFile","Update-eSchoolModule","Update-eSchoolPassword"
     
     # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
     CmdletsToExport = @()

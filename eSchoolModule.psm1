@@ -1,3 +1,24 @@
+function Update-eSchoolModule {
+
+     <#
+        .SYNOPSIS
+        Update the eSchoolModule from Github.
+    
+    #>
+
+    if (-Not $(New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+        Write-Error "Must run as administrator!" -ErrorAction STOP
+    }
+
+    $ModulePath = Get-Module eSchoolModule | Select-Object -ExpandProperty ModuleBase
+
+    Invoke-WebRequest -Uri "https://raw.githubusercontent.com/AR-k12code/eSchoolModule/master/eSchoolModule.psd1" -OutFile "$($ModulePath)\eSchoolModule.psd1"
+    Invoke-WebRequest -Uri "https://raw.githubusercontent.com/AR-k12code/eSchoolModule/master/eSchoolModule.psm1" -OutFile "$($ModulePath)\eSchoolModule.psm1"
+
+    Import-Module eSchoolModule -Force
+
+}
+
 function Set-eSchoolConfig {
     <#
         .SYNOPSIS

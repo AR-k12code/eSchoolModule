@@ -10,7 +10,7 @@
     RootModule = 'eSchoolModule.psm1'
     
     # Version number of this module.
-    ModuleVersion = '23.2.9'
+    ModuleVersion = '23.2.15'
     
     # ID used to uniquely identify this module
     GUID = 'b9c99138-35f7-4095-a9e1-5ea07297c903'
@@ -34,7 +34,7 @@
     #RequiredModules = @()
     
     # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-    FunctionsToExport = 'Assert-eSPSession','Clear-eSPFailedTask','Connect-ToeSchool','Disconnect-FromeSchool',
+    FunctionsToExport = 'Update-eSchoolModule','Assert-eSPSession','Clear-eSPFailedTask','Connect-ToeSchool','Disconnect-FromeSchool',
         'Get-eSPFile','Get-eSPFileList','Get-eSPSchools','Get-eSPStudentDetails','Get-eSPStudents','Get-eSPTaskList',
         'Invoke-eSPDownloadDefinition','Invoke-eSPUploadDefinition','Remove-eSchoolConfig','Set-eSchoolConfig',
         'Show-eSchoolConfig','Submit-eSPFile','Update-eSchoolPassword'

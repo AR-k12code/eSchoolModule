@@ -14,7 +14,17 @@ Param(
     [Parameter(Mandatory=$false)][switch]$SkipRunningDownloadDefinition
 )
 
-if (-Not(Test-Path .\archives)) { New-Item -ItemType Directory -Path .\archives }
+#CSVKit Requirement
+@("csvclean.exe","csvsql.exe") | ForEach-Object {
+    if ($null -eq (Get-Command "$($PSItem)" -ErrorAction SilentlyContinue)) { 
+    Write-Error "Unable to find $($PSItem) in your PATH. Install Python3 and run 'pip install csvkit'."
+    exit
+    }
+}
+
+if (-Not(Test-Path .\archives)) {
+    New-Item -ItemType Directory -Path .\archives
+}
 
 $RequiredFiles = @(
     "GUARD_REG_STU_CONTACT",
@@ -58,33 +68,19 @@ $RequiredFiles | ForEach-Object {
 
     #New-Variable -Name $PSItem -Value (Get-eSPFile -FileName "$($PSItem).csv" -Raw | ConvertFrom-CSV -Delimiter '|' | Select-Object -ExcludeProperty '#!#') -Force
     Write-Host "Downloading file $($PSItem).csv"
-    $fileContents = Get-eSPFile -FileName "$($PSItem).csv" -Raw | ConvertFrom-CSV -Delimiter '|' | Select-Object -ExcludeProperty '#!#'
 
-    $tableName = $PSitem
+    #GUARD_REG_STU_CONTACT contains a notes field which can have LF/CR characters and break import into a database. We need to clean those up before inserting into the database.
 
-    $dbFields = $fileContents[0].PSObject.Properties.Name | ForEach-Object {
-        "'$PSitem' TEXT"
-    }
+    (Get-eSPFile -FileName "$($PSItem).csv" -Raw) -replace "`n",'{LF}' -replace "`r",'{CR}' -replace '\|#!#{CR}{LF}',"`r`n" | Out-File "$($PSItem).csv" -NoNewline
+    
+    #we have to verify the file is cleaned. This will create a file appended with _out.csv
+    & csvclean.exe -d '|' "$($PSItem).csv"
 
-    Invoke-SqlUpdate -Query "DROP TABLE IF EXISTS '$tableName'; CREATE TABLE '$tableName' (
-	    $($dbFields -join ',')
-    );" | Out-Null
-
-    Write-Verbose "INSERT INTO '$($tableName)' ($($PSitem.PSObject.Properties.Name -join ',')) VALUES (@$($PSitem.PSObject.Properties.Name -join ',@')"
-
-    Write-Host "Inserting $PSitem.csv into database..."
-    Start-SqlTransaction -Verbose
-    $fileContents | ForEach-Object {
-        #Convert the object to a hashtable so it can be directly inserted into the SQLite Database. This is stupid fast.
-        Invoke-SqlUpdate `
-            -Query "INSERT INTO '$($tableName)' ($($PSitem.PSObject.Properties.Name -join ',')) VALUES (@$($PSitem.PSObject.Properties.Name -join ',@'))" `
-            -Parameters ($PSitem.psobject.properties | ForEach-Object -Begin { $hashTable = @{} } -Process { $hashTable."$($_.Name)" = $_.Value } -End { $hashTable }) | Out-Null
-    }
-    Complete-SqlTransaction -Verbose
+    & csvsql -I --db "sqlite:///guardians.sqlite3" -d ',' -y 0 --insert --overwrite --blanks --tables "$($PSItem)" "$($PSItem)_out.csv"
 
     Write-Host "Backing up $($PSitem).csv to archives\$($PSitem)-$(Get-Date -Format 'yyyy-MM-dd-HH-mm-ss').csv"
 
-    $fileContents | Export-Csv -Path "archives\$($PSitem)-$(Get-Date -Format 'yyyy-MM-dd-HH-mm-ss').csv" -Force
+    Move-Item -Path "$($PSitem).csv" -Destination "archives\$($PSitem)-$(Get-Date -Format 'yyyy-MM-dd-HH-mm-ss').csv" -Force -Verbose
 
 }
 

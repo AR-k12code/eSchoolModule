@@ -582,6 +582,8 @@ function Invoke-eSPUploadDefinition {
 
     Assert-eSPSession
 
+    $dateTime = Get-Date
+
     #expecting string but wanting to use switches for function.
     $UpdateExistingRecords = $DoNotUpdateExistingRecords ? 'false' : 'true' #reverse for switch.
     $InsertNew = $InsertNewRecords ? 'true' : 'false'
@@ -611,7 +613,7 @@ function Invoke-eSPUploadDefinition {
         'Filter.GroupingMask' = ''
         'TaskScheduler.CurrentTask.ScheduleType' = 'N'
         'TaskScheduler.CurrentTask.SchdInterval' = '1'
-        'TaskScheduler.CurrentTask.ScheduledTimeTime' = (Get-Date).ToString("hh:mm tt") #Set forward 1 minute(s) "03:45 PM"
+        'TaskScheduler.CurrentTask.ScheduledTimeTime' = $dateTime.ToString("hh:mm tt") #Set forward 1 minute(s) "03:45 PM"
         'TaskScheduler.CurrentTask.ScheduledTimeDate' = Get-Date -UFormat %m/%d/%Y #"05/07/2019"
         'TaskScheduler.CurrentTask.Monday' = 'false'
         'TaskScheduler.CurrentTask.Tuesday' = 'false'

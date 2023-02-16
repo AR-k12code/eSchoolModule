@@ -27,9 +27,16 @@ Please provide your Cognos Password: ********************
 Update-eSchoolPassword [[-ConfigName] <String>] [[-Password] <SecureString>]
 ````
 
-## Tutorial
+# Required eSchool Permissions
+As an administrator you should be assigned a role with READ access to all areas of eSchool.
+
+You NEED Read/Write to eSchoolPLUS System > Utilities > RUNLOAD
+
+# Tutorial
 Coming Soon
 [![tutorial](/images/youtube_thumbnail.jpg)](https://www.youtube.com/@camtechcs)
+
+# Commmands
 
 ### Establish Connection to eSchool
 ````

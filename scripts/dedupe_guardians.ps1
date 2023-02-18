@@ -14,6 +14,64 @@ Param(
     [Parameter(Mandatory=$false)][switch]$SkipRunningDownloadDefinition
 )
 
+#without this function csvclean and csvsql will fail on certain characters.
+function Remove-StringLatinCharacter {
+    <#
+    .SYNOPSIS
+        Function to remove diacritics from a string
+    .DESCRIPTION
+        Function to remove diacritics from a string
+    .PARAMETER String
+        Specifies the String that will be processed
+    .EXAMPLE
+        Remove-StringLatinCharacter -String "L'été de Raphaël"
+        L'ete de Raphael
+    .EXAMPLE
+        Foreach ($file in (Get-ChildItem c:\test\*.txt))
+        {
+            # Get the content of the current file and remove the diacritics
+            $NewContent = Get-content $file | Remove-StringLatinCharacter
+            # Overwrite the current file with the new content
+            $NewContent | Set-Content $file
+        }
+        Remove diacritics from multiple files
+    .NOTES
+        Francois-Xavier Cat
+        lazywinadmin.com
+        @lazywinadmin
+        github.com/lazywinadmin
+        BLOG ARTICLE
+            https://lazywinadmin.com/2015/05/powershell-remove-diacritics-accents.html
+        VERSION HISTORY
+            1.0.0.0 | Francois-Xavier Cat
+                Initial version Based on Marcin Krzanowic code
+            1.0.0.1 | Francois-Xavier Cat
+                Added support for ValueFromPipeline
+            1.0.0.2 | Francois-Xavier Cat
+                Add Support for multiple String
+                Add Error Handling
+        .LINK
+            https://github.com/lazywinadmin/PowerShell
+    #>
+    [CmdletBinding()]
+    PARAM (
+        [Parameter(ValueFromPipeline = $true)]
+        [System.String[]]$String
+    )
+    PROCESS {
+        FOREACH ($StringValue in $String) {
+            Write-Verbose -Message "$StringValue"
+
+            TRY {
+                [Text.Encoding]::ASCII.GetString([Text.Encoding]::GetEncoding("Cyrillic").GetBytes($StringValue))
+            }
+            CATCH {
+                $PSCmdlet.ThrowTerminatingError($PSItem)
+            }
+        }
+    }
+}
+
 #CSVKit Requirement
 @("csvclean.exe","csvsql.exe") | ForEach-Object {
     if ($null -eq (Get-Command "$($PSItem)" -ErrorAction SilentlyContinue)) { 
@@ -21,6 +79,9 @@ Param(
     exit
     }
 }
+
+#silence the warnings on csvsql.exe
+$env:SQLALCHEMY_SILENCE_UBER_WARNING = 1
 
 if (-Not(Test-Path .\archives)) {
     New-Item -ItemType Directory -Path .\archives
@@ -71,12 +132,12 @@ $RequiredFiles | ForEach-Object {
 
     #GUARD_REG_STU_CONTACT contains a notes field which can have LF/CR characters and break import into a database. We need to clean those up before inserting into the database.
 
-    (Get-eSPFile -FileName "$($PSItem).csv" -Raw) -replace "`n",'{LF}' -replace "`r",'{CR}' -replace '\|#!#{CR}{LF}',"`r`n" | Out-File "$($PSItem).csv" -NoNewline
+    (Get-eSPFile -FileName "$($PSItem).csv" -Raw) -replace "`n",'{LF}' -replace "`r",'{CR}' -replace '\|#!#{CR}{LF}',"`r`n" | Remove-StringLatinCharacter | Out-File "$($PSItem).csv" -NoNewline
     
     #we have to verify the file is cleaned. This will create a file appended with _out.csv
     & csvclean.exe -d '|' "$($PSItem).csv"
 
-    & csvsql -I --db "sqlite:///guardians.sqlite3" -d ',' -y 0 --insert --overwrite --blanks --tables "$($PSItem)" "$($PSItem)_out.csv"
+    & csvsql.exe -I --db "sqlite:///guardians.sqlite3" -d ',' -y 0 --insert --overwrite --blanks --tables "$($PSItem)" "$($PSItem)_out.csv"
 
     Write-Host "Backing up $($PSitem).csv to archives\$($PSitem)-$(Get-Date -Format 'yyyy-MM-dd-HH-mm-ss').csv"
 

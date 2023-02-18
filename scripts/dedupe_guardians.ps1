@@ -9,8 +9,10 @@
 #>
 
 Param(
-    [Parameter(Mandatory=$false)][switch]$MatchOnAddress,
+    [Parameter(Mandatory=$false)][switch]$MatchOnAddressAlso,
     [Parameter(Mandatory=$false)][switch]$AllowBlankEmail,
+    [Parameter(Mandatory=$false)][string]$EmailAddress, #specify guardian email address to dedupe.
+    [Parameter(Mandatory=$false)][ValidateSet("G","O","C")][string]$GuardianType = 'G',
     [Parameter(Mandatory=$false)][switch]$SkipRunningDownloadDefinition
 )
 
@@ -145,7 +147,7 @@ $RequiredFiles | ForEach-Object {
 
 }
 
-if ($existingDuplicates = Invoke-SqlQuery -Query "SELECT * FROM GUARD_REG_STU_CONTACT WHERE CONTACT_PRIORITY = 99 AND CONTACT_TYPE = 'G'") {
+if ($existingDuplicates = Invoke-SqlQuery -Query "SELECT * FROM GUARD_REG_STU_CONTACT WHERE CONTACT_PRIORITY = 99 AND CONTACT_TYPE = '$($GuardianType)'") {
     Write-Error "You have already attached duplicate guardians with CONTACT_PRIORITY of 99. You must fix those before running this script again."
 
     $existingDuplicates | ForEach-Object {
@@ -156,13 +158,17 @@ if ($existingDuplicates = Invoke-SqlQuery -Query "SELECT * FROM GUARD_REG_STU_CO
 }
 
 #a hashtable we can reference later if neeeded. (not currently needed.)
-$allGuardians = Invoke-SqlQuery -Query "SELECT * FROM GUARD_REG_CONTACT WHERE CONTACT_ID IN (SELECT CONTACT_ID FROM GUARD_REG_STU_CONTACT WHERE CONTACT_TYPE = 'G')" | Group-Object -Property CONTACT_ID -AsHashTable
+$allGuardians = Invoke-SqlQuery -Query "SELECT * FROM GUARD_REG_CONTACT WHERE CONTACT_ID IN (SELECT CONTACT_ID FROM GUARD_REG_STU_CONTACT WHERE CONTACT_TYPE = '$($GuardianType)')" | Group-Object -Property CONTACT_ID -AsHashTable
 
 if (-Not($AllowBlankEmail)) {
     $emailFilter = " AND EMAIL != '' "
 }
 
-if ($MatchOnAddress) {
+if ($EmailAddress) {
+    $emailFilter = " AND EMAIL = '$($EmailAddress)' "
+}
+
+if ($MatchOnAddressAlso) {
     $groupBy = @("FIRST_NAME","LAST_NAME","EMAIL","ADDRESS")
 } else {
     $groupBy = @("FIRST_NAME","LAST_NAME","EMAIL")
@@ -182,7 +188,7 @@ FROM GUARD_REG_CONTACT
 LEFT JOIN GUARD_REG_STU_CONTACT ON GUARD_REG_CONTACT.CONTACT_ID = GUARD_REG_STU_CONTACT.CONTACT_ID
 LEFT JOIN GUARD_REG ON GUARD_REG_STU_CONTACT.STUDENT_ID = GUARD_REG.STUDENT_ID
 WHERE
-	GUARD_REG_STU_CONTACT.CONTACT_TYPE = 'G'
+	GUARD_REG_STU_CONTACT.CONTACT_TYPE = '$($GuardianType)'
 $($emailFilter)
 AND
 	GUARD_REG.CURRENT_STATUS = 'A'
@@ -218,13 +224,13 @@ $guardianDuplicatesByEmail | ForEach-Object {
                     CONTACT_ID = $contactId
                     STUDENT_ID = $studentId
                     CONTACT_PRIORITY = 99
-                    CONTACT_TYPE = 'G'
+                    CONTACT_TYPE = "$($GuardianType)"
                 }
             )
             
             #we then need to connect the $primaryContactId in place of the $secondaryStuContacts with the $secondaryStuContacts REG_STU_CONTACT fields they get reattached correctly.
             #lets pull the previous guardian record, change the contact_id to the primary and add to be processed.
-            $secondarySTUConnection = Invoke-SqlQuery -Query "SELECT * FROM GUARD_REG_STU_CONTACT WHERE CONTACT_ID = '$contactId' AND STUDENT_ID = '$studentId' AND CONTACT_TYPE = 'G'"
+            $secondarySTUConnection = Invoke-SqlQuery -Query "SELECT * FROM GUARD_REG_STU_CONTACT WHERE CONTACT_ID = '$contactId' AND STUDENT_ID = '$studentId' AND CONTACT_TYPE = '$($GuardianType)'"
             
             $primaryGuardianToReplaceSecondary.Add(
                 [PSCustomObject]@{
@@ -312,18 +318,17 @@ $guardianDuplicatesByEmail | ForEach-Object {
 if ($MoveGuardiansTo99) {
     $MoveGuardiansTo99 | ConvertTo-Csv -UseQuotes AsNeeded | Select-Object -Skip 1 | Out-File .\duplicate_guardians_to_99.csv -Force
     Submit-eSPFile duplicate_guardians_to_99.csv
+    Invoke-eSPUploadDefinition -InterfaceID ESMU2 -RunMode V -Wait #Guardian to 99
 } 
-
-if ($PhoneNumbersForPrimaryGuardian) {
-    $PhoneNumbersForPrimaryGuardian | ConvertTo-Csv -UseQuotes AsNeeded | Select-Object -Skip 1 | Out-File .\duplicate_guardian_phone_numbers.csv
-    Submit-eSPFile duplicate_guardian_phone_numbers.csv
-}
 
 if ($primaryGuardianToReplaceSecondary) {
     $primaryGuardianToReplaceSecondary | ConvertTo-Csv -UseQuotes AsNeeded | Select-Object -Skip 1 | Out-File .\duplicate_guardians_fix.csv
     Submit-eSPFile duplicate_guardians_fix.csv
+    Invoke-eSPUploadDefinition -InterfaceID ESMU3 -RunMode V -InsertNewRecords -Wait #Connect Primary Guardian where duplicate was.
 }
 
-Invoke-eSPUploadDefinition -InterfaceID ESMU2 -RunMode V -Wait #Guardian to 99
-Invoke-eSPUploadDefinition -InterfaceID ESMU3 -RunMode V -InsertNewRecords -Wait #Connect Primary Guardian where duplicate was.
-Invoke-eSPUploadDefinition -InterfaceID ESMU4 -RunMode V -InsertNewRecords -Wait #Insert updated or missing phone records from duplicates to primary.
+if ($PhoneNumbersForPrimaryGuardian) {
+    $PhoneNumbersForPrimaryGuardian | ConvertTo-Csv -UseQuotes AsNeeded | Select-Object -Skip 1 | Out-File .\duplicate_guardian_phone_numbers.csv
+    Submit-eSPFile duplicate_guardian_phone_numbers.csv
+    Invoke-eSPUploadDefinition -InterfaceID ESMU4 -RunMode V -InsertNewRecords -Wait #Insert updated or missing phone records from duplicates to primary.    
+}

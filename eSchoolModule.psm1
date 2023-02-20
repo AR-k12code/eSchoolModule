@@ -372,12 +372,12 @@ function Get-eSPFile {
         if ($Raw) {
             #from here you can page through the data and convert to an object reasonably.
             $response = Invoke-WebRequest -Uri "$($eschoolSession.Url)/Reports/$($report.ReportPath)" -WebSession $eschoolSession.Session
-            return [System.Text.Encoding]::Latin1.GetString($response.Content)
+            return [System.Text.Encoding]::GetEncoding(1252).GetString($response.Content)
             # Then you can .Split("`r`n"), Take [0] + [1..25] | ConvertFrom-CSV -Delimiter '^'
             # then [0] + [26..50] | ConvertFrom-Csv -Delimiter '^'
         } elseif ($AsObject) {
             $response = Invoke-WebRequest -Uri "$($eschoolSession.Url)/Reports/$($report.ReportPath)" -WebSession $eschoolSession.Session
-            return [System.Text.Encoding]::Latin1.GetString($response.Content) | ConvertFrom-CSV -Delimiter $Delimeter
+            return [System.Text.Encoding]::GetEncoding(1252).GetString($response.Content) | ConvertFrom-CSV -Delimiter $Delimeter
         } else {
             Invoke-WebRequest -Uri "$($eschoolSession.Url)/Reports/$($report.ReportPath)" -WebSession $eschoolSession.Session -OutFile $OutFile
         }

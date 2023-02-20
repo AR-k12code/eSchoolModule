@@ -30,7 +30,9 @@ Update-eSchoolPassword [[-ConfigName] <String>] [[-Password] <SecureString>]
 # Required eSchool Permissions
 As an administrator you should be assigned a role with READ access to all areas of eSchool.
 
-You NEED Read/Write to eSchoolPLUS System > Utilities > RUNLOAD
+You NEED Read/Write to:
+- eSchoolPLUS System > Utilities > RUNLOAD
+- eSchoolPLUS System > Setup And Configuration > LOADDEFS
 
 # Tutorial
 Coming Soon

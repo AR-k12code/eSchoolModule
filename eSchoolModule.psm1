@@ -400,7 +400,7 @@ function Submit-eSPFile {
     #>
 
     Param(
-        [parameter(Mandatory=$true,HelpMessage="File Path")]$InFile
+        [parameter(Mandatory=$true,HelpMessage="File Path",Position=0)]$InFile
     )
 
     Assert-eSPSession
@@ -423,6 +423,29 @@ function Submit-eSPFile {
     } else {
         Throw "Could not find file."
     }
+
+}
+
+function Remove-eSPFile {
+
+    <#
+    
+    .SYNOPSIS
+    Delete a file from the user directory.
+    
+    #>
+
+    Param(
+        [Parameter(Mandatory=$true,Position=0)][string]$FileName
+    )
+
+    Assert-eSPSession
+
+    $response = Invoke-RestMethod -Uri "$($eSchoolSession.Url)/Task/DeleteTasksAndReports" `
+        -Method "POST" `
+        -WebSession $eSchoolSession.session `
+        -ContentType "application/json; charset=UTF-8" `
+        -Body "{`"reportsToDelete`":[`"$($FileName)`"],`"tasksToDelete`":[]}"
 
 }
 

@@ -127,14 +127,23 @@ Get-eSPMasterSchedule
 
 # PreDefined Upload/Download Defininitions
 Built in download definitions will start with ESMD and upload defintions will start with ESMU. For the last character we will use [0-9] then [A-Z].
+
+## Create Definitions
+- New-eSPEmailDefinitions (ESMD0,ESMU0,ESMU1)
+- New-eSPGuardianDefinitions (ESMD1,ESMU2,ESMU3,ESMU4)
+- New-eSPHACUploadDefinition (ESMU5)
+
+### Download Definitions
 - ESMD0 - "eSchoolModule - Email Download Definition" - Download Contact_id,Student_id, and Email. Then you can process to fix them.
 - ESMD1 - "eSchoolModule - Guardian Duplication" - Download all the information needed to dedupe guardian contacts.
 
+### Uplaod Definitions
 - ESMU0 - "eSchoolModule - Email Upload Definition" - Upload Student Emails by Contact_id,Email
 - ESMU1 - "eSchoolModule - Web Access Upload Definition" - Enable Web Access for Contacts
 - ESMU2 - "eSchoolModule - Move Duplicate Guardian Priority" - Move Duplicate Guardians to Priority of 99
-- ESMU2 - "eSchoolModule - Connect Duplicate Guardians" - Connect the Existing Contacts to Students
-- ESMU3 - "eSchoolModule - Merge Duplicate Guardian Phone Numbers" - Because we don't want lost data.
+- ESMU3 - "eSchoolModule - Connect Duplicate Guardians" - Connect the Existing Contacts to Students
+- ESMU4 - "eSchoolModule - Merge Duplicate Guardian Phone Numbers" - Because we don't want lost data.
+- ESMU5 - "eSchoolModule - Upload HAC Usernames for Contact ID" - Fix usernames for HAC. This does not fix passwords or generate Access Codes.
 
 ## Definition Creator
 Think Bigger!

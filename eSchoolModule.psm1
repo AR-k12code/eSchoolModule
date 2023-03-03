@@ -1619,7 +1619,7 @@ function New-eSPEmailDefinitions {
 
     .SYNOPSIS
     This function will create the Upload and Download Definitions used to fix upload definitions.
-    Download Definition : EMLDL, Upload Definition : EMLUP,EMLAC
+    Download Definition : ESMD0, Upload Definition : ESMU0,ESMU1
 
     #>
 
@@ -1874,6 +1874,63 @@ function New-eSPGuardianDefinitions {
     }
     
     New-eSPDefinition -Definition $newDefinition
+}
+
+function New-eSPHACUploadDefinition {
+    <#
+
+    .SYNOPSIS
+    This function will create the Upload and Download Definitions used to fix HAC usernames.
+    
+    #>
+    
+    Param(
+        [Parameter(Mandatory=$false)][switch]$Force
+    )
+
+    Assert-eSPSession
+
+    <#
+        Upload Definition
+    #>
+
+    $newDefinition = New-espDefinitionTemplate -InterfaceId ESMU5 -Description "eSchoolModule - HAC LoginID" -DefinitionType Upload
+
+    $newDefinition.UploadDownloadDefinition.InterfaceHeaders += New-eSPInterfaceHeader `
+        -InterfaceId "ESMU5" `
+        -HeaderId 1 `
+        -HeaderOrder 1 `
+        -FileName "hac_loginids.csv" `
+        -TableName "reg_contact" `
+        -Description "HAC Login IDs Upload Definition"
+        
+    $rows = @(
+        @{ table = "reg_contact"; column = "CONTACT_ID"; length = 20 },
+        @{ table = "reg_contact"; column = "LOGIN_ID"; length = 250 }
+    )
+
+    $columns = @()
+    $columnNum = 1
+    $rows | ForEach-Object {
+        $columns += New-eSPDefinitionColumn -InterfaceID 'ESMU5' -HeaderID 1 -TableName $($PSitem.table) -FieldId $columnNum -FieldOrder $columnNum -ColumnName $($PSitem.column) -FieldLength $($PSItem.length)
+        $columnNum++
+    }
+
+    $newDefinition.UploadDownloadDefinition.InterfaceHeaders[0].InterfaceDetails = $columns
+
+    $jsonpayload = $newDefinition | ConvertTo-Json -depth 6
+
+    Write-Verbose ($jsonpayload)
+ 
+    #attempt to delete existing if its there already
+    Remove-eSPInterfaceId -InterfaceId "ESMU5"
+
+    $response2 = Invoke-RestMethod -Uri "$($eSchoolSession.Url)/Utility/SaveUploadDownload" `
+        -WebSession $eSchoolSession.Session `
+        -Method "POST" `
+        -ContentType "application/json; charset=UTF-8" `
+        -Body $jsonpayload -MaximumRedirection 0
+
 }
 
 function Receive-eSPAdditionalREGMAINTTables {

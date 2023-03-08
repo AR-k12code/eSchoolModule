@@ -271,6 +271,7 @@ function Connect-ToeSchool {
             Session = $eschoolSession
             Username = $username
             Url = $baseUrl
+            Server = $($fields.'ServerName'.value)
             Params = @{ #used to reestablish session
                 Database = $Database
                 ConfigName = $ConfigName

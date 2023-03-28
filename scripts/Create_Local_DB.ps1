@@ -48,7 +48,12 @@ if (-Not($SkipRunningDownloadDefinition)) {
         }
 
         Start-Sleep -Seconds 3
-    } while (Get-eSPTaskList -ActiveTasksOnly -SilentErrors)
+    } while (
+        #tasks are still running.
+        ( Get-eSPTaskList -ActiveTasksOnly -SilentErrors | Where-Object { $tasks -contains $PSItem.TaskName -and $PSitem.ErrorOccurred -eq $False } ) -or
+        #tasks have not started yet.
+        ( Get-eSPTaskList | Select-Object -ExpandProperty InactiveTasks | Where-Object { $tasks -contains $PSItem.TaskName } )
+        )
 }
 
 $dateTime = Get-Date -Format 'yyyy-MM-dd-HH-mm-ss'

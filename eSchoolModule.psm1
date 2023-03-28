@@ -475,7 +475,7 @@ function Invoke-eSPDownloadDefinition {
         'StartDate' = '07/01/2019'
         'ImportDirectory' = 'UD'
         'TxtImportDirectory' = ''
-        'TaskScheduler.CurrentTask.Classname' = 'LTDB20_4.CRunDownload'
+        'TaskScheduler.CurrentTask.Classname' = 'LTDB21_4.CRunDownload'
         'TaskScheduler.CurrentTask.TaskDescription' = "$InterfaceID"
         'groupPredicate' = 'false'
         'Filter.LoginId' = $eSchoolSession.Username
@@ -625,7 +625,7 @@ function Invoke-eSPUploadDefinition {
         'StudWithoutOpenProg' = 'USD'
         'RunType' = 'UPLOAD'
         'ProgramDatesEnabled' = 'N'
-        'TaskScheduler.CurrentTask.Classname' = 'LTDB20_4.CRunUpload'
+        'TaskScheduler.CurrentTask.Classname' = 'LTDB21_4.CRunUpload'
         'TaskScheduler.CurrentTask.TaskDescription' = $InterfaceID
         'groupPredicate' = 'false'
         'Filter.Predicates[0].PredicateIndex' = '1'

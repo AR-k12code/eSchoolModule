@@ -4,3 +4,4 @@ test.ps1
 *.sqlite3
 testing/**
 !resources/**
+*.log

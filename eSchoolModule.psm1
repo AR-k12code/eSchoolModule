@@ -367,20 +367,20 @@ function Get-eSPFile {
         $OutFile = $($report.RawFileName)
     }
 
-    Write-Verbose ("$($eschoolSession.Url)/Reports/$($report.ReportPath)")
+    Write-Verbose ("$($eschoolSession.Url)/ReportViewer/FileStream?fileName=$($report.RawFileName)")
 
     try {  
         if ($Raw) {
             #from here you can page through the data and convert to an object reasonably.
-            $response = Invoke-WebRequest -Uri "$($eschoolSession.Url)/Reports/$($report.ReportPath)" -WebSession $eschoolSession.Session
+            $response = Invoke-WebRequest -Uri "$($eschoolSession.Url)/ReportViewer/FileStream?fileName=$($report.RawFileName)" -WebSession $eschoolSession.Session
             return [System.Text.Encoding]::GetEncoding(1252).GetString($response.Content)
             # Then you can .Split("`r`n"), Take [0] + [1..25] | ConvertFrom-CSV -Delimiter '^'
             # then [0] + [26..50] | ConvertFrom-Csv -Delimiter '^'
         } elseif ($AsObject) {
-            $response = Invoke-WebRequest -Uri "$($eschoolSession.Url)/Reports/$($report.ReportPath)" -WebSession $eschoolSession.Session
+            $response = Invoke-WebRequest -Uri "$($eschoolSession.Url)/ReportViewer/FileStream?fileName=$($report.RawFileName)" -WebSession $eschoolSession.Session
             return [System.Text.Encoding]::GetEncoding(1252).GetString($response.Content) | ConvertFrom-CSV -Delimiter $Delimeter
         } else {
-            Invoke-WebRequest -Uri "$($eschoolSession.Url)/Reports/$($report.ReportPath)" -WebSession $eschoolSession.Session -OutFile $OutFile
+            Invoke-WebRequest -Uri "$($eschoolSession.Url)/ReportViewer/FileStream?fileName=$($report.RawFileName)" -WebSession $eschoolSession.Session -OutFile $OutFile
         }
     } catch {
         Throw "$PSItem"

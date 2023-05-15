@@ -79,9 +79,15 @@ $RequiredFiles | ForEach-Object {
     (Get-eSPFile -FileName "$($PSItem).csv" -Raw) -replace "`n",'{LF}' -replace "`r",'{CR}' -replace '\|#!#{CR}{LF}',"`r`n" | Out-File "$($PSItem).csv" -NoNewline
     
     #we have to verify the file is cleaned. This will create a file appended with _out.csv
-    & csvclean.exe -d '|' "$($PSItem).csv" --encoding windows-1252
+    & csvclean.exe -d '|' "$($PSItem).csv" #--encoding windows-1252
+    if ($LASTEXITCODE -ge 1) {
+        & csvclean.exe -d '|' "$($PSItem).csv" --encoding windows-1252
+    }
 
     & csvsql.exe -I --db "sqlite:///guardians.sqlite3" -d ',' -y 0 --insert --overwrite --blanks --tables "$($PSItem)" "$($PSItem)_out.csv"
+    if ($LASTEXITCODE -ge 1) {
+        & csvsql.exe -I --db "sqlite:///guardians.sqlite3" -d ',' -y 0 --insert --overwrite --blanks --tables "$($PSItem)" "$($PSItem)_out.csv" --encoding windows-1252
+    }
 
     Write-Host "Backing up $($PSitem).csv to archives\$($PSitem)-$(Get-Date -Format 'yyyy-MM-dd-HH-mm-ss').csv"
 

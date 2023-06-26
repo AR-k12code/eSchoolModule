@@ -467,6 +467,7 @@ function Invoke-eSPDownloadDefinition {
     Assert-eSPSession
 
     $dateTime = Get-Date
+    $runTime = ([System.TimeZoneInfo]::ConvertTimeFromUtc([DateTime]::UtcNow.ToString(),[System.TimeZoneInfo]::FindSystemTimeZoneById("Central Standard Time")))
 
     $params = [ordered]@{
         'SearchType' = 'download_filter'
@@ -488,7 +489,7 @@ function Invoke-eSPDownloadDefinition {
         'SortFields.SearchType' = 'download_filter'
         'SortFields.SearchNumber' = '0'
         'TaskScheduler.CurrentTask.ScheduleType' = 'O'
-        'TaskScheduler.CurrentTask.ScheduledTimeTime' = $dateTime.ToString("hh:mm tt") #(Get-Date).AddMinutes(1).ToString("hh:mm tt")
+        'TaskScheduler.CurrentTask.ScheduledTimeTime' = $runTime.ToString("hh:mm tt") #(Get-Date).AddMinutes(1).ToString("hh:mm tt")
         'TaskScheduler.CurrentTask.ScheduledTimeDate' = Get-Date -UFormat %m/%d/%Y
         'TaskScheduler.CurrentTask.SchdInterval' = '1'
         'TaskScheduler.CurrentTask.Monday' = 'false'
@@ -607,6 +608,7 @@ function Invoke-eSPUploadDefinition {
     Assert-eSPSession
 
     $dateTime = Get-Date
+    $runTime = ([System.TimeZoneInfo]::ConvertTimeFromUtc([DateTime]::UtcNow.ToString(),[System.TimeZoneInfo]::FindSystemTimeZoneById("Central Standard Time")))
 
     #expecting string but wanting to use switches for function.
     $UpdateExistingRecords = $DoNotUpdateExistingRecords ? 'false' : 'true' #reverse for switch.
@@ -637,7 +639,7 @@ function Invoke-eSPUploadDefinition {
         'Filter.GroupingMask' = ''
         'TaskScheduler.CurrentTask.ScheduleType' = 'N'
         'TaskScheduler.CurrentTask.SchdInterval' = '1'
-        'TaskScheduler.CurrentTask.ScheduledTimeTime' = $dateTime.ToString("hh:mm tt") #Set forward 1 minute(s) "03:45 PM"
+        'TaskScheduler.CurrentTask.ScheduledTimeTime' = $runTime.ToString("hh:mm tt") #Set forward 1 minute(s) "03:45 PM"
         'TaskScheduler.CurrentTask.ScheduledTimeDate' = Get-Date -UFormat %m/%d/%Y #"05/07/2019"
         'TaskScheduler.CurrentTask.Monday' = 'false'
         'TaskScheduler.CurrentTask.Tuesday' = 'false'

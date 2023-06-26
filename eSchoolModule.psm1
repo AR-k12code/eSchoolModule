@@ -188,12 +188,14 @@ function Connect-ToeSchool {
     if ($TrainingSite) {
         $baseUrl = "https://eschool20.esptrn.k12.ar.us/eSchoolPLUS"
     } else {
-        $baseUrl = "https://eschool20.esp.k12.ar.us/eSchoolPLUS20"
+        $baseUrl = "https://eschool23.esp.k12.ar.us/eSchoolPLUS"
     }
 
     $username = $config.username
     $password = (New-Object pscredential "user",($config.password | ConvertTo-SecureString)).GetNetworkCredential().Password
     
+    Write-Verbose "$($baseUrl)/Account/LogOn"
+
     #Get Verification Token.
     $response = Invoke-WebRequest `
         -Uri "$($baseUrl)/Account/LogOn" `
@@ -250,6 +252,8 @@ function Connect-ToeSchool {
     }
 
     Write-Verbose ($params2 | ConvertTo-Json)
+
+    Write-Verbose "$($baseUrl)/Account/SetEnvironment/SessionStart"
 
     $response3 = Invoke-WebRequest `
         -Uri "$($baseUrl)/Account/SetEnvironment/SessionStart" `
@@ -466,8 +470,8 @@ function Invoke-eSPDownloadDefinition {
 
     Assert-eSPSession
 
-    $dateTime = Get-Date
-    $runTime = ([System.TimeZoneInfo]::ConvertTimeFromUtc([DateTime]::UtcNow.ToString(),[System.TimeZoneInfo]::FindSystemTimeZoneById("Central Standard Time")))
+    #All Arkansas Servers are Central Time. This will ensure that all date comparisons are compared to Central Time.
+    $dateTime = [System.TimeZoneInfo]::ConvertTimeBySystemTimeZoneId((Get-Date), 'Central Standard Time')
 
     $params = [ordered]@{
         'SearchType' = 'download_filter'
@@ -489,7 +493,7 @@ function Invoke-eSPDownloadDefinition {
         'SortFields.SearchType' = 'download_filter'
         'SortFields.SearchNumber' = '0'
         'TaskScheduler.CurrentTask.ScheduleType' = 'O'
-        'TaskScheduler.CurrentTask.ScheduledTimeTime' = $runTime.ToString("hh:mm tt") #(Get-Date).AddMinutes(1).ToString("hh:mm tt")
+        'TaskScheduler.CurrentTask.ScheduledTimeTime' = $dateTime.ToString("hh:mm tt") #(Get-Date).AddMinutes(1).ToString("hh:mm tt")
         'TaskScheduler.CurrentTask.ScheduledTimeDate' = Get-Date -UFormat %m/%d/%Y
         'TaskScheduler.CurrentTask.SchdInterval' = '1'
         'TaskScheduler.CurrentTask.Monday' = 'false'
@@ -607,8 +611,7 @@ function Invoke-eSPUploadDefinition {
 
     Assert-eSPSession
 
-    $dateTime = Get-Date
-    $runTime = ([System.TimeZoneInfo]::ConvertTimeFromUtc([DateTime]::UtcNow.ToString(),[System.TimeZoneInfo]::FindSystemTimeZoneById("Central Standard Time")))
+    $dateTime = [System.TimeZoneInfo]::ConvertTimeBySystemTimeZoneId((Get-Date), 'Central Standard Time')
 
     #expecting string but wanting to use switches for function.
     $UpdateExistingRecords = $DoNotUpdateExistingRecords ? 'false' : 'true' #reverse for switch.
@@ -639,7 +642,7 @@ function Invoke-eSPUploadDefinition {
         'Filter.GroupingMask' = ''
         'TaskScheduler.CurrentTask.ScheduleType' = 'N'
         'TaskScheduler.CurrentTask.SchdInterval' = '1'
-        'TaskScheduler.CurrentTask.ScheduledTimeTime' = $runTime.ToString("hh:mm tt") #Set forward 1 minute(s) "03:45 PM"
+        'TaskScheduler.CurrentTask.ScheduledTimeTime' = $dateTime.ToString("hh:mm tt") #Set forward 1 minute(s) "03:45 PM"
         'TaskScheduler.CurrentTask.ScheduledTimeDate' = Get-Date -UFormat %m/%d/%Y #"05/07/2019"
         'TaskScheduler.CurrentTask.Monday' = 'false'
         'TaskScheduler.CurrentTask.Tuesday' = 'false'

@@ -2,7 +2,14 @@
 These scripts come without warranty of any kind. Use them at your own risk. I assume no liability for the accuracy, correctness, completeness, or usefulness of any information provided by this site nor for any sort of damages using these scripts may cause.
 
 The eSchool Powershell Module requires PowerShell 7
+**DO NOT INSTALL THESE SCRIPTS TO A DOMAIN CONTROLLER.**
 
+Create a dedicated VM running Windows Server 2019 or Windows 10 Pro 1809+ for your automation scripts.
+
+## Requirements
+Git ````https://git-scm.com/download/win````
+
+Powershell 7 ````https://github.com/PowerShell/powershell/releases````
 ## Installation Process
 Open PowerShell Window as Administrator
 ````

@@ -1934,6 +1934,69 @@ function New-eSPHACUploadDefinition {
 
 }
 
+function New-eSPAttUploadDefinitions {
+
+    <#
+    
+    .SYNOPSIS
+    Create the upload definitions required to upload attendance.
+    
+    #>
+
+    Assert-eSPSession
+
+    $newDefinition = New-eSPDefinitionTemplate `
+        -DefinitionType Upload `
+        -InterfaceId "ESMU6" `
+        -Description "eSchoolModule - Upload Attendance"
+
+    $newDefinition.UploadDownloadDefinition.InterfaceHeaders += New-eSPInterfaceHeader `
+        -InterfaceId "ESMU6" `
+        -HeaderId 1 `
+        -HeaderOrder 1 `
+        -FileName "attendance_upload.csv" `
+        -TableName "att_bottomline" `
+        -Description "eSchoolModule - ATT_BOTTOMLINE"
+
+    $index = 1
+    @("STUDENT_ID","BUILDING","ATTENDANCE_CODE","ATTENDANCE_DATE","ATTENDANCE_PERIOD","ATT_COMMENT","SCHOOL_YEAR","SOURCE","SEQUENCE_NUM","SUMMER_SCHOOL","MINUTES_ABSENT") | ForEach-Object {
+        $newDefinition.UploadDownloadDefinition.InterfaceHeaders[0].InterfaceDetails +=	New-eSPDefinitionColumn `
+            -InterfaceId "ESMU6" `
+            -HeaderId 1 `
+            -TableName "att_bottomline" `
+            -FieldId $index `
+            -FieldOrder $index `
+            -ColumnName "$PSitem" `
+            -FieldLength 255
+        $index++
+    }
+
+    $newDefinition.UploadDownloadDefinition.InterfaceHeaders += New-eSPInterfaceHeader `
+        -InterfaceId "ESMU6" `
+        -HeaderId 2 `
+        -HeaderOrder 2 `
+        -FileName "attendance_upload.csv" `
+        -TableName "att_audit_trail" `
+        -Description "eSchoolModule - ATT_AUDIT_TRAIL"
+
+    $index = 1
+    @("STUDENT_ID","BUILDING","ATTENDANCE_CODE","ATTENDANCE_DATE","ATTENDANCE_PERIOD","ATT_COMMENT","SCHOOL_YEAR","SOURCE","SEQUENCE_NUM","SUMMER_SCHOOL","MINUTES_ABSENT","ENTRY_DATE_TIME","ENTRY_USER","ENTRY_ORDER_NUM","BOTTOMLINE") | ForEach-Object {
+        $newDefinition.UploadDownloadDefinition.InterfaceHeaders[1].InterfaceDetails +=	New-eSPDefinitionColumn `
+            -InterfaceId "ESMU6" `
+            -HeaderId 2 `
+            -TableName "att_audit_trail" `
+            -FieldId $index `
+            -FieldOrder $index `
+            -ColumnName "$PSitem" `
+            -FieldLength 255
+        $index++
+    }
+    
+    #Upload Existing Contacts in the Place of the Duplicate.
+    New-eSPDefinition -Definition $newDefinition -Verbose
+
+}
+
 function Receive-eSPAdditionalREGMAINTTables {
     <#
     

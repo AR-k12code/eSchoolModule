@@ -5,3 +5,4 @@ test.ps1
 testing/**
 !resources/**
 *.log
+New-Student.ps1

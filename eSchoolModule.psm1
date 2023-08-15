@@ -188,12 +188,14 @@ function Connect-ToeSchool {
     if ($TrainingSite) {
         $baseUrl = "https://eschool20.esptrn.k12.ar.us/eSchoolPLUS"
     } else {
-        $baseUrl = "https://eschool20.esp.k12.ar.us/eSchoolPLUS20"
+        $baseUrl = "https://eschool23.esp.k12.ar.us/eSchoolPLUS"
     }
 
     $username = $config.username
     $password = (New-Object pscredential "user",($config.password | ConvertTo-SecureString)).GetNetworkCredential().Password
     
+    Write-Verbose "$($baseUrl)/Account/LogOn"
+
     #Get Verification Token.
     $response = Invoke-WebRequest `
         -Uri "$($baseUrl)/Account/LogOn" `
@@ -250,6 +252,8 @@ function Connect-ToeSchool {
     }
 
     Write-Verbose ($params2 | ConvertTo-Json)
+
+    Write-Verbose "$($baseUrl)/Account/SetEnvironment/SessionStart"
 
     $response3 = Invoke-WebRequest `
         -Uri "$($baseUrl)/Account/SetEnvironment/SessionStart" `
@@ -466,7 +470,8 @@ function Invoke-eSPDownloadDefinition {
 
     Assert-eSPSession
 
-    $dateTime = Get-Date
+    #All Arkansas Servers are Central Time. This will ensure that all date comparisons are compared to Central Time.
+    $dateTime = [System.TimeZoneInfo]::ConvertTimeBySystemTimeZoneId((Get-Date), 'Central Standard Time')
 
     $params = [ordered]@{
         'SearchType' = 'download_filter'
@@ -606,7 +611,7 @@ function Invoke-eSPUploadDefinition {
 
     Assert-eSPSession
 
-    $dateTime = Get-Date
+    $dateTime = [System.TimeZoneInfo]::ConvertTimeBySystemTimeZoneId((Get-Date), 'Central Standard Time')
 
     #expecting string but wanting to use switches for function.
     $UpdateExistingRecords = $DoNotUpdateExistingRecords ? 'false' : 'true' #reverse for switch.

@@ -139,6 +139,7 @@ Built in download definitions will start with ESMD and upload defintions will st
 - New-eSPEmailDefinitions (ESMD0,ESMU0,ESMU1)
 - New-eSPGuardianDefinitions (ESMD1,ESMU2,ESMU3,ESMU4)
 - New-eSPHACUploadDefinition (ESMU5)
+- New-eSPAttUploadDefinitions (ESMU6)
 
 ### Download Definitions
 - ESMD0 - "eSchoolModule - Email Download Definition" - Download Contact_id,Student_id, and Email. Then you can process to fix them.

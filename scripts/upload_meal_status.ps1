@@ -63,16 +63,8 @@ $definitions = Invoke-eSPExecuteSearch -SearchType UPLOADDEF
 }
 
 #Pull down existing data so we can close old program dates.
-if ($SkipRunningDownloadDefinition) {
+if (-Not($SkipRunningDownloadDefinition)) {
     
-    #Reuse local data.
-    $existingMealStatus = Import-Csv "esp_meal_status.csv" |
-        Add-Member -MemberType ScriptProperty -Name "Latest_Start_Date" -Value { (Get-Date "$($this.START_DATE)") } -PassThru |
-        Sort-Object -Property Latest_Start_Date |
-        Group-Object -Property STUDENT_ID -AsHashTable
-
-} else {
-
     $startTime = Get-Date
     Write-Host "Downloading existing Meal Status data from eSchool..."
     Invoke-eSPDownloadDefinition -InterfaceID ESMD2 -Wait
@@ -80,10 +72,6 @@ if ($SkipRunningDownloadDefinition) {
     #Check that we have a new file after the $startTime
     if (Get-eSPFileList | Where-Object -Property RawFileName -EQ "esp_meal_status.csv" | Where-Object -Property ModifiedDate -GE $startTime) {
         Get-eSPFile -FileName "esp_meal_status.csv"
-        $existingMealStatus = Import-Csv "esp_meal_status.csv" | 
-            Add-Member -MemberType ScriptProperty -Name "Latest_Start_Date" -Value { (Get-Date "$($this.START_DATE)") } -PassThru |
-            Sort-Object -Property Latest_Start_Date |
-            Group-Object -Property STUDENT_ID -AsHashTable
     } else {
         Write-Error "The file timestamps are not newer than the start time of the definition. This indicates eSchool did not create the expected file."
         Exit 1
@@ -91,12 +79,43 @@ if ($SkipRunningDownloadDefinition) {
 
 }
 
-#bring in new file and create the object needed for the CSV.
+$schoolYear = (Get-Date).Month -ge 7 ? (Get-Date).Year : (Get-Date).AddYears(-1).Year
+
+#import CSV
+if (Test-Path "esp_meal_status.csv") {
+
+    $eSchoolMealStatusData = Import-Csv "esp_meal_status.csv" |
+        Add-Member -MemberType ScriptProperty -Name "Latest_Start_Date" -Value { (Get-Date "$($this.START_DATE)") } -PassThru
+    
+    $directCertifiedStudentIds = $eSchoolMealStatusData |
+        Where-Object -Property PROGRAM_VALUE -EQ '04' |
+        Where-Object -Property Latest_Start_Date -GE (Get-Date "7/1/$($schoolYear)") |
+        Select-Object -ExpandProperty STUDENT_ID
+
+    $existingMealStatus = $eSchoolMealStatusData |
+        Where-Object { $directCertifiedStudentIds -notcontains $PSitem.STUDENT_ID } |
+        Sort-Object -Property Latest_Start_Date |
+        Group-Object -Property STUDENT_ID -AsHashTable
+
+} else {
+    Write-Error "esp_meal_status.csv not found."
+    Exit 1
+}
+
+#we need to find all the existing open program dates that don't match the incoming file. The comparison needs to be on the Date and Program Value.
+$close_existing_meal_status = @()
+
+#bring in the file to process and create the object needed for the CSV upload into eSchool.
 $meal_status_upload = $incomingCSV | ForEach-Object {
 
     $student_id = $PSitem.$StudentIDField
     $meal_status = $PSitem.$MealStatusField
     $start_date = (Get-Date "$($PSitem.$StartDateField)").ToShortDateString()
+
+    if ($directCertifiedStudentIds -contains $student_id) { 
+        Write-Warning "$($student_id) is Direct Certified. Skipping."
+        return
+    }
 
     if ($null -EQ $student_id -or $null -EQ $meal_status -or $null -EQ $start_date) {
         Write-Error "Missing required fields. Please check the CSV file."
@@ -105,9 +124,12 @@ $meal_status_upload = $incomingCSV | ForEach-Object {
 
     if (@('Free','Reduced','Paid') -contains $meal_status) {
         SWITCH ($meal_status) {
-            'Free'      { $meal_status = 1 }
-            'Reduced'   { $meal_status = 2 }
-            'Paid'      { $meal_status = 3 }
+            'Free'    { $meal_status = 1 }
+            'Reduced' { $meal_status = 2 }
+            'Paid'    { $meal_status = 3 }
+            'F'       { $meal_status = 1 } #Free
+            'R'       { $meal_status = 2 } #Reduced
+            'N'       { $meal_status = 3 } #No
         }
     }
 
@@ -123,9 +145,6 @@ $meal_status_upload = $incomingCSV | ForEach-Object {
     }
 
 }
-
-#we need to find all the existing open program dates that don't match the incoming file. The comparison needs to be on the Date and Program Value.
-$close_existing_meal_status = @()
 
 $meal_status_upload | ForEach-Object {
     #check for existing program value.

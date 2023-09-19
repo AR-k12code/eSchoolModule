@@ -2002,6 +2002,80 @@ function New-eSPAttUploadDefinitions {
 
 }
 
+function New-eSPMealStatusDefinitions {
+<#
+    .SYNOPSIS
+    This will create the definitions ESMD2 and ESMU7 for the Meal Status Upload/Download.
+
+    .DESCRIPTION
+    
+#>
+
+$newDefinition = New-eSPDefinitionTemplate `
+    -DefinitionType Download `
+    -InterfaceId "ESMD2" `
+    -Description "eSchoolModule - Meal Status"
+
+$newDefinition.UploadDownloadDefinition.InterfaceHeaders += New-eSPInterfaceHeader `
+    -InterfaceId "ESMD2" `
+    -HeaderId 1 `
+    -HeaderOrder 1 `
+    -FileName "esp_meal_status.csv" `
+    -TableName "reg_programs" `
+    -Description "eSchoolModule - Meal Status" `
+    -AdditionalSQL 'LEFT JOIN REG ON REG_PROGRAMS.STUDENT_ID = REG.STUDENT_ID WHERE REG_PROGRAMS.PROGRAM_ID = ''ARSES'' AND REG.CURRENT_STATUS = ''A'' AND REG_PROGRAMS.START_DATE > DATEADD(year, -2, GETDATE())'
+
+$index = 1
+@("DISTRICT","PROGRAM_ID","FIELD_NUMBER","STUDENT_ID","START_DATE","SUMMER_SCHOOL","ENTRY_REASON","PROGRAM_VALUE","END_DATE","WITHDRAWAL_REASON","PROGRAM_OVERRIDE","CHANGE_DATE_TIME","CHANGE_UID") | ForEach-Object {
+    $newDefinition.UploadDownloadDefinition.InterfaceHeaders[0].InterfaceDetails +=	New-eSPDefinitionColumn `
+        -InterfaceId "ESMD2" `
+        -HeaderId 1 `
+        -TableName "reg_programs" `
+        -FieldId $index `
+        -FieldOrder $index `
+        -ColumnName "$PSitem" `
+        -FieldLength 255
+    $index++
+}
+
+New-eSPDefinition -Definition $newDefinition -Verbose
+
+
+#Upload Definition
+$newDefinition = New-eSPDefinitionTemplate -InterfaceId ESMU7 -Description "eSchoolModule - Meal Status" -DefinitionType Upload
+
+$newDefinition.UploadDownloadDefinition.InterfaceHeaders += New-eSPInterfaceHeader `
+    -InterfaceId "ESMU7" `
+    -HeaderId 1 `
+    -HeaderOrder 1 `
+    -FileName "meal_status_upload.csv" `
+    -TableName "reg_programs" `
+    -Description "Meal Status Upload"
+
+    $rows = @(
+        @{ table = "reg_programs"; column = "STUDENT_ID"; length = 10 },
+        @{ table = "reg_programs"; column = "PROGRAM_ID"; length = 5 },
+        @{ table = "reg_programs"; column = "PROGRAM_VALUE"; length = 2 },
+        @{ table = "reg_programs"; column = "FIELD_NUMBER"; length = 1 },
+        @{ table = "reg_programs"; column = "START_DATE"; length = 10 },
+        @{ table = "reg_programs"; column = "END_DATE"; length = 10 },
+        @{ table = "reg_programs"; column = "SUMMER_SCHOOL"; length = 1 },
+        @{ table = "reg_programs"; column = "PROGRAM_OVERRIDE"; length = 1 }
+    )
+
+    $columns = @()
+    $columnNum = 1
+    $rows | ForEach-Object {
+        $columns += New-eSPDefinitionColumn -InterfaceID 'ESMU7' -HeaderID 1 -TableName $($PSitem.table) -FieldId $columnNum -FieldOrder $columnNum -ColumnName $($PSitem.column) -FieldLength $($PSItem.length)
+        $columnNum++
+    }
+
+    $newDefinition.UploadDownloadDefinition.InterfaceHeaders[0].InterfaceDetails = $columns
+
+New-eSPDefinition -Definition $newDefinition
+
+}
+
 function Receive-eSPAdditionalREGMAINTTables {
     <#
     

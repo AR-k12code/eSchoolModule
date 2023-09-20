@@ -306,5 +306,19 @@ DANGER WILL ROBINSON! This script is a proposal on deduping guardians. Read it, 
 dedupe_guardians.ps1 -MatchOnAddress -AllowBlankEmail
 ````
 
+## Upload_Meal_Status.ps1
+This script will download your existing meal status in eSchool for active students. It will ignore students in eSchool who have a 04 Direct Certification. It will then process the incoming new data, close existing program dates, and upload the new value.
+````
+.\Upload_Meal_Status.ps1 -FilePath eTrition_Application_Eligitibility.csv -StudentIDField PatronNumber -MealStatus Eligibility -StartDateField ApplicationStartDate -RunMode V
+````
+
+This script requires a CSV like the one below but you can specify the required column names on the command line:
+````
+STUDENT_ID,MEAL_STATUS,START_DATE
+403005966,1,9/19/2023
+403005967,3,9/19/2023
+403005968,Free,2023/9/19
+````
+
 # What Now?
 PROFIT?!

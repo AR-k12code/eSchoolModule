@@ -144,6 +144,7 @@ Built in download definitions will start with ESMD and upload defintions will st
 ### Download Definitions
 - ESMD0 - "eSchoolModule - Email Download Definition" - Download Contact_id,Student_id, and Email. Then you can process to fix them.
 - ESMD1 - "eSchoolModule - Guardian Duplication" - Download all the information needed to dedupe guardian contacts.
+- ESMD2 - "eSchoolModule - Meal Status" - Download the last 2 years of meal status data for active students.
 
 ### Upload Definitions
 - ESMU0 - "eSchoolModule - Email Upload Definition" - Upload Student Emails by Contact_id,Email
@@ -153,6 +154,7 @@ Built in download definitions will start with ESMD and upload defintions will st
 - ESMU4 - "eSchoolModule - Merge Duplicate Guardian Phone Numbers" - Because we don't want lost data.
 - ESMU5 - "eSchoolModule - Upload HAC Usernames for Contact ID" - Fix usernames for HAC. This does not fix passwords or generate Access Codes.
 - ESMU6 - "eSchoolModule - Upload Attendance" - Push attendance from 3rd party programs back into eSchool. You must be able to match the period name.
+- ESMU7 - "eSchoolModule - Upload Meal Status" - Upload Meal Status from Cafeteria Softare.
 
 ## Definition Creator
 Think Bigger!

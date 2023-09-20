@@ -2042,7 +2042,7 @@ New-eSPDefinition -Definition $newDefinition -Verbose
 
 
 #Upload Definition
-$newDefinition = New-eSPDefinitionTemplate -InterfaceId ESMU7 -Description "eSchoolModule - Meal Status" -DefinitionType Upload
+$newDefinition = New-eSPDefinitionTemplate -InterfaceId ESMU7 -Description "eSchoolModule - Upload Meal Status" -DefinitionType Upload
 
 $newDefinition.UploadDownloadDefinition.InterfaceHeaders += New-eSPInterfaceHeader `
     -InterfaceId "ESMU7" `

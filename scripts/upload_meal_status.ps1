@@ -153,7 +153,8 @@ $meal_status_upload | ForEach-Object {
         #if the latest program value is not the same as the incoming program value then we need to close the existing program.
         $latestRecord = $existingMealStatus.($PSitem.STUDENT_ID) | Select-Object -Last 1
 
-        if ($latestRecord.PROGRAM_VALUE -ne $PSitem.PROGRAM_VALUE -and <#$latestRecord.START_DATE -ne $PSitem.START_DATE -and#> $latestRecord.END_DATE -eq '') {
+        #This is actually based on the START_DATE not the PROGRAM_VALUE. It could be the same program value with a different start date.  This would just bring eSchool in line with the meal application.
+        if (<#$latestRecord.PROGRAM_VALUE -ne $PSitem.PROGRAM_VALUE -and#> $latestRecord.START_DATE -ne $PSitem.START_DATE -and $latestRecord.END_DATE -eq '') {
             #we need to close the existing program.
             $close_existing_meal_status += [PSCustomObject]@{
                 STUDENT_ID = $latestRecord.STUDENT_ID

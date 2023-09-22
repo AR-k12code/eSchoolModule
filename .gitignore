@@ -6,3 +6,4 @@ testing/**
 !resources/**
 *.log
 New-Student.ps1
+*.bak

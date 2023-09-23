@@ -198,7 +198,10 @@ if ($meal_status_upload) {
                 Out-File -FilePath "meal_status_upload.csv" -Force
 
             Submit-eSPFile -InFile meal_status_upload.csv
-            Invoke-eSPUploadDefinition -InterfaceID ESMU7 -RunMode $RunMode -InsertNewRecords
+            Invoke-eSPUploadDefinition -InterfaceID ESMU7 -RunMode $RunMode -InsertNewRecords -Wait
+            $eSchoolFiles = Get-eSPFileList
+            $fileDateTime = $eSchoolFiles | Where-Object -Property RawFileName -EQ "meal_status_upload.csv" | Select-Object -ExpandProperty ModifiedDate
+            $eSchoolFiles | Where-object -Property ModifiedDate -GE $fileDateTime | Where-Object -Property RawFileName -LIKE "Run_Upload_Log*.txt" | Select-Object -Last 1 | Get-eSPFile -Raw
         } else {
             Write-Host "No changes necessary to upload into eSchool."
             Exit 0

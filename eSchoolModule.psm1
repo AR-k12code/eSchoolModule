@@ -349,7 +349,7 @@ function Get-eSPFile {
 
     [CmdletBinding(DefaultParametersetName="FileName")]
     Param(
-        [Parameter(Mandatory=$true,ParameterSetName="FileName")][string]$FileName, #Download an exact named file.
+        [Parameter(Mandatory=$true,ParameterSetName="FileName",ValueFromPipelineByPropertyName=$true)][Alias('RawFileName')][string]$FileName, #Download an exact named file.
         [Parameter(Mandatory=$true,ParameterSetName="NameLike")][string]$NameLike, #Download the latest file that matches. Example would be HomeAccessPasswords* where there are possibly hundreds of unknown files.
         [Parameter(Mandatory=$false)][string]$OutFile,
         [Parameter(Mandatory=$false)][switch]$AsObject,
@@ -357,42 +357,55 @@ function Get-eSPFile {
         [Parameter(Mandatory=$false)][string]$Delimeter = ',' #This could be Pipe or whatever the eSchool Definition uses.
     )
 
-    Assert-eSPSession
+    Begin {
+        Assert-eSPSession
 
-    $latestFileList = Get-eSPFileList
-
-    if ($FileName) {
-        $report = $latestFileList | Where-Object { $PSItem.RawFileName -eq "$($FileName)" }
-    } else {
-        $report = $latestFileList | Where-Object { $PSitem.RawFileName -LIKE "$($NameLike)*" } | Select-Object -First 1
+        $latestFileList = Get-eSPFileList
     }
 
-    if (-Not($OutFile)) {
-        $OutFile = $($report.RawFileName)
-    }
+    Process {
 
-    Write-Verbose ("$($eschoolSession.Url)/ReportViewer/FileStream?fileName=$($report.RawFileName)")
-
-    try {  
-        if ($Raw) {
-            #from here you can page through the data and convert to an object reasonably.
-            $response = Invoke-WebRequest -Uri "$($eschoolSession.Url)/ReportViewer/FileStream?fileName=$($report.RawFileName)" -WebSession $eschoolSession.Session
-            return [System.Text.Encoding]::GetEncoding(1252).GetString($response.Content)
-            # Then you can .Split("`r`n"), Take [0] + [1..25] | ConvertFrom-CSV -Delimiter '^'
-            # then [0] + [26..50] | ConvertFrom-Csv -Delimiter '^'
-        } elseif ($AsObject) {
-            $response = Invoke-WebRequest -Uri "$($eschoolSession.Url)/ReportViewer/FileStream?fileName=$($report.RawFileName)" -WebSession $eschoolSession.Session
-            return [System.Text.Encoding]::GetEncoding(1252).GetString($response.Content) | ConvertFrom-CSV -Delimiter $Delimeter
+        if ($FileName) {
+            $report = $latestFileList | Where-Object { $PSItem.RawFileName -eq "$($FileName)" }
         } else {
-            Invoke-WebRequest -Uri "$($eschoolSession.Url)/ReportViewer/FileStream?fileName=$($report.RawFileName)" -WebSession $eschoolSession.Session -OutFile $OutFile
+            $report = $latestFileList | Where-Object { $PSitem.RawFileName -LIKE "$($NameLike)*" } | Select-Object -First 1
         }
-    } catch {
-        Throw "$PSItem"
-    }
 
-    return [PSCustomObject]@{
-        Name = $($report.RawFileName)
-        Path = Get-ChildItem $OutFile
+        if (-Not($OutFile)) {
+            $OutFile = $($report.RawFileName)
+        }
+
+        Write-Verbose ("$($eschoolSession.Url)/ReportViewer/FileStream?fileName=$($report.RawFileName)")
+
+        try {  
+            if ($Raw) {
+                #from here you can page through the data and convert to an object reasonably.
+                $response = Invoke-WebRequest -Uri "$($eschoolSession.Url)/ReportViewer/FileStream?fileName=$($report.RawFileName)" -WebSession $eschoolSession.Session
+                
+                #Encoding.CodePage is not returned with the response from eSchool. You must use 1252 instead of UTF8.
+                switch ($response.Headers['Content-Type']) {
+                    'text/plain' { return $response.Content }
+                    'application/octet-stream' { return [System.Text.Encoding]::GetEncoding(1252).GetString($response.Content) }
+                    'application/pdf' { Throw "PDF files are not supported as raw." }
+                    default { Throw "Unrecognized content-type. $($response.Headers['Content-Type'])" }
+                }
+
+                # Then you can .Split("`r`n"), Take [0] + [1..25] | ConvertFrom-CSV -Delimiter '^'
+                # then [0] + [26..50] | ConvertFrom-Csv -Delimiter '^'
+            } elseif ($AsObject) {
+                $response = Invoke-WebRequest -Uri "$($eschoolSession.Url)/ReportViewer/FileStream?fileName=$($report.RawFileName)" -WebSession $eschoolSession.Session
+                return [System.Text.Encoding]::GetEncoding(1252).GetString($response.Content) | ConvertFrom-CSV -Delimiter $Delimeter
+            } else {
+                Invoke-WebRequest -Uri "$($eschoolSession.Url)/ReportViewer/FileStream?fileName=$($report.RawFileName)" -WebSession $eschoolSession.Session -OutFile $OutFile
+            }
+        } catch {
+            Throw "$PSItem"
+        }
+
+        return [PSCustomObject]@{
+            Name = $($report.RawFileName)
+            Path = Get-ChildItem $OutFile
+        }
     }
 
 }

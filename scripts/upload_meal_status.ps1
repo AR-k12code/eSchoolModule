@@ -209,3 +209,5 @@ if ($meal_status_upload) {
     }
 }
 
+Write-Warning "You should run this Cognos Report to review any issues with Meal Status dates:"
+Write-Warning 'Get-CognosReport -report "APSCN Invalid Program Dates" -cognosfolder "_Shared Data File Reports\eSchool Data Cleanup Reports" -reportparams "p_year=2024" -TeamContent | Where-Object -Property "Program Name" -eq "Meal Status" | Format-Table'

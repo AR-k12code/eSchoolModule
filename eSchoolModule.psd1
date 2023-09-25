@@ -10,7 +10,7 @@
     RootModule = 'eSchoolModule.psm1'
     
     # Version number of this module.
-    ModuleVersion = '23.9.19'
+    ModuleVersion = '23.9.25'
     
     # ID used to uniquely identify this module
     GUID = 'b9c99138-35f7-4095-a9e1-5ea07297c903'
@@ -25,7 +25,7 @@
     Copyright = '(c) CAMTech Computer Services, LLC. All rights reserved.'
     
     # Description of the functionality provided by this module
-    Description = 'Module for pulling data from the Arkansas Cognos Data Servers'
+    Description = 'Module for pulling data from the Arkansas eSchool Servers'
     
     # Minimum version of the Windows PowerShell engine required by this module
     PowerShellVersion = '7.0'

@@ -1313,7 +1313,8 @@ function New-eSPBulkDownloadDefinition {
         [parameter(Mandatory=$false)]$Delimiter = ',',
         [parameter(Mandatory=$false)]$Description = "eSchoolModule Bulk Definition",
         [parameter(Mandatory=$false)]$FilePrefix = '', #Make all files start with this. Something like "GUARD_"
-        [parameter(Mandatory=$false)][Switch]$Force #overwrite existing.
+        [parameter(Mandatory=$false)][Switch]$Force, #overwrite existing.
+        [parameter(Mandatory=$false)][switch]$IncludeSSN #If the table has SSN or FMS_EMPL_NUMBER then include it. Otherwise this is excluded by default.
     )
 
     Assert-eSPSession
@@ -1429,6 +1430,13 @@ function New-eSPBulkDownloadDefinition {
         $columns = @()
         $columnNum = 1
         $PSItem.Group | ForEach-Object {
+
+            if (-Not($IncludeSSN)) {
+                if (@('SSN','FMS_EMPL_NUMBER') -contains $PSItem.colName) {
+                    return
+                }
+            }
+
             $columns += New-eSPDefinitionColumn `
                 -InterfaceId "$InterfaceId" `
                 -HeaderId "$ifaceheader" `

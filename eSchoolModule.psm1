@@ -199,7 +199,8 @@ function Connect-ToeSchool {
     #Get Verification Token.
     $response = Invoke-WebRequest `
         -Uri "$($baseUrl)/Account/LogOn" `
-        -SessionVariable eSchoolSession
+        -SessionVariable eSchoolSession `
+        -TimeoutSec 5
 
     #Login
     $params = @{
@@ -213,6 +214,7 @@ function Connect-ToeSchool {
         -WebSession $eSchoolSession `
         -Method POST `
         -Body $params `
+        -TimeoutSec 5
 
     # if (($response2.ParsedHtml.title -eq "Login") -or ($response2.StatusCode -ne 200)) {
     #     Write-Error "Failed to login."
@@ -260,7 +262,8 @@ function Connect-ToeSchool {
         -WebSession $eSchoolSession `
         -Method POST `
         -Body $params2 `
-        -ContentType "application/x-www-form-urlencoded"
+        -ContentType "application/x-www-form-urlencoded" `
+        -TimeoutSec 5
 
     #verify we set the environment/selected a valid district.
     try {
@@ -268,7 +271,8 @@ function Connect-ToeSchool {
         $response4 = Invoke-RestMethod `
             -Uri "$($baseUrl)/Task/TaskAndReportData?includeTaskCount=false&includeReports=false&maximumNumberOfReports=1&includeTasks=false&runningTasksOnly=false" `
             -WebSession $eSchoolSession `
-            -MaximumRedirection 0
+            -MaximumRedirection 0 `
+            -TimeoutSec 5
 
         Write-Host "Connected to eSchool Server $($fields.'ServerName'.value)" -ForegroundColor Green
         $global:eSchoolSession = @{
@@ -804,17 +808,23 @@ function Clear-eSPFailedTask {
     #>
 
     Param(
-        [parameter(Mandatory=$true)][string]$TaskKey
+        [parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true)][string]$TaskKey
     )
 
-    Assert-eSPSession
+    Begin {
+        Assert-eSPSession
+    }
 
-    #This always returns the Task List regardless of what we send it.
-    $response = Invoke-RestMethod -Uri "$($eschoolSession.Url)/Task/ClearErroredTask" `
-        -Method "POST" `
-        -WebSession $eschoolSession.Session `
-        -ContentType "application/json; charset=UTF-8" `
-        -Body "{`"paramKey`":`"$($PSitem.TaskKey)`"}"
+    Process {
+
+        #This always returns the Task List regardless of what we send it.
+        $response = Invoke-RestMethod -Uri "$($eschoolSession.Url)/Task/ClearErroredTask" `
+            -Method "POST" `
+            -WebSession $eschoolSession.Session `
+            -ContentType "application/json; charset=UTF-8" `
+            -Body "{`"paramKey`":`"$($PSitem.TaskKey)`"}"
+
+    }
 
 }
 

@@ -12398,3 +12398,198 @@ STATE_TASK_LOG_DET,CHANGE_UID,True
 '@
 
 }
+
+function New-eSPJSONLDefinition {
+    <#
+    
+    .SYNOPSIS
+    Create a Download Definition that uses JSONL for the file format.
+
+    .DESCRIPTION
+    Since eSchool can not properly escape CSV files we need to use a structured data format to retrieve data. JSONL properly escapes data and allows for structured data to be pulled.
+    Unfortunately this has two problems. 1. There can only be one definition per table pulled. 2. It dramatically increases the file size.
+    But for structured data it is the only option.
+    
+    .NOTES
+    If the table has ROW_IDENTITY you should use it for the WHERE clause.
+    If the table is a 1:1 for students then you should use the STUDENT_ID for the WHERE clause.
+    We should really use the PK for the table. This might be multiple fields so this can be complicated and will require the table defintions.
+
+    #>
+    Param(
+        [parameter(Mandatory=$true)][string]$Table, #Single Table.
+        [Parameter(Mandatory=$true)][ValidateScript( { ($PSitem.Length) -eq 5} )]$InterfaceId,
+        [Parameter(Mandatory=$false)][string]$filename, #If you want to specify the filename, otherwise it will be the InterfaceId since its a 1:1 definition/file.
+        [parameter(Mandatory=$false,HelpMessage="Must begin with AND")][String]$AdditionalSQL = $null, #additional SQL
+        [parameter(Mandatory=$false)][Switch]$DoNotLimitSchoolYear, #otherwise all queries are limited to the current school year if the table has the SCHOOL_YEAR in it.
+        [parameter(Mandatory=$false)]$Delimiter = ',',
+        [parameter(Mandatory=$false)]$Description = "eSchoolModule Bulk Definition",
+        [parameter(Mandatory=$false)]$FilePrefix = '', #Make all files start with this. Something like "GUARD_"
+        [parameter(Mandatory=$false)][Switch]$Force, #overwrite existing.
+        [parameter(Mandatory=$false)][switch]$IncludeSSN #If the table has SSN or FMS_EMPL_NUMBER then include it. Otherwise this is excluded by default.
+    )
+
+    Assert-eSPSession
+
+    if ($AdditionalSQL) {
+        $sqlspecified = $True
+    }
+
+    if (-NOt($filename)) {
+        $filename = $InterfaceId
+    }
+
+    #Import-CSV ".\resources\eSchool Tables with SCHOOL_YEAR.csv" | Select-Object -ExpandProperty tblName
+    $tables_with_years = @("AR_CLASS_DOWN","AR_DOWN_ALE_DAYS","AR_DOWN_ATTEND","AR_DOWN_CAL","AR_DOWN_DISCIPLINE","AR_DOWN_DISTRICT","AR_DOWN_EC","AR_DOWN_EIS1","AR_DOWN_EIS2","AR_DOWN_EMPLOYEE",
+    "AR_DOWN_GRADUATE","AR_DOWN_HEARING","AR_DOWN_JOBASSIGN","AR_DOWN_REFERRAL","AR_DOWN_REGISTER","AR_DOWN_SCHL_AGE","AR_DOWN_SCHOOL","AR_DOWN_SCOLIOSIS","AR_DOWN_SE_STAFF","AR_DOWN_STU","AR_DOWN_STU_ID",
+    "AR_DOWN_STUDENT_GRADES","AR_DOWN_VISION","ARTB_SE_REFERRAL","ATT_AUDIT_TRAIL","ATT_BOTTOMLINE","ATT_CFG","ATT_CFG_CODES","ATT_CFG_MISS_SUB","ATT_CFG_PERIODS","ATT_CODE","ATT_CODE_BUILDING",
+    "ATT_CONFIG_PERCENT","ATT_HRM_SEATING","ATT_INTERVAL","ATT_LOCK_DATE","ATT_NOTIFY_CRIT","ATT_NOTIFY_CRIT_CD","ATT_NOTIFY_CRIT_PD","ATT_NOTIFY_ELIG_CD","ATT_NOTIFY_GROUP","ATT_NOTIFY_LANG",
+    "ATT_NOTIFY_STU_DET","ATT_NOTIFY_STU_HDR","ATT_PERIOD","ATT_STU_AT_RISK","ATT_STU_DAY_TOTALS","ATT_STU_ELIGIBLE","ATT_STU_HRM_SEAT","ATT_STU_INT_CRIT","ATT_STU_INT_GROUP","ATT_STU_INT_MEMB",
+    "ATT_TWS_TAKEN","ATT_VIEW_ABS","ATT_VIEW_CYC","ATT_VIEW_DET","ATT_VIEW_HDR","ATT_VIEW_INT","ATT_VIEW_MSE_BLDG","ATT_VIEW_PER","ATT_YREND_RUN","COTB_REPORT_PERIOD","CP_STU_FUTURE_REQ",
+    "DISC_ACT_USER","DISC_ATT_NOTIFY","DISC_INCIDENT","DISC_LINK_ISSUE","DISC_LTR_CRIT","DISC_LTR_CRIT_ACT","DISC_LTR_CRIT_ELIG","DISC_LTR_CRIT_OFF","DISC_LTR_DETAIL","DISC_LTR_HEADER","DISC_NOTES",
+    "DISC_OCCURRENCE","DISC_OFF_ACTION","DISC_OFF_CHARGE","DISC_OFF_CODE","DISC_OFF_CONVICT","DISC_OFF_DRUG","DISC_OFF_FINE","DISC_OFF_SUBCODE","DISC_OFF_WEAPON","DISC_OFFENDER","DISC_PRINT_CITATION",
+    "DISC_STU_AT_RISK","DISC_STU_ELIGIBLE","DISC_USER","DISC_VICTIM","DISC_VICTIM_ACTION","DISC_VICTIM_INJURY","DISC_WITNESS","DISC_YEAREND_RUN","FEE_GROUP_CRIT","FEE_GROUP_DET","FEE_GROUP_HDR",
+    "FEE_ITEM","FEE_STU_AUDIT","FEE_STU_GROUP","FEE_STU_ITEM","FEE_STU_PAYMENT","FEE_TEXTBOOK","FEE_TEXTBOOK_CRS","FEE_TEXTBOOK_TEA","FEE_YREND_RUN","FEETB_CATEGORY","FEETB_PAYMENT","FEETB_STU_STATUS",
+    "FEETB_SUB_CATEGORY","FEETB_UNIT_DESCR","ltdb_group_det","ltdb_group_hdr","LTDB_YEAREND_RUN","MD_ATTENDANCE_DOWN","MD_RUN","MD_SCGT_DOWN","MED_YEAREND_RUN","MR_AVERAGE_CALC","MR_AVERAGE_SETUP",
+    "MR_CLASS_SIZE","MR_CREDIT_SETUP","MR_CREDIT_SETUP_AB","MR_CREDIT_SETUP_GD","MR_CREDIT_SETUP_MK","MR_CRSEQU_DET","MR_CRSEQU_HDR","MR_CRSEQU_SETUP","MR_CRSEQU_SETUP_AB","MR_CRSEQU_SETUP_MK",
+    "MR_GB_ASMT_STU_COMP_ATTACH","MR_GB_CATEGORY_TYPE_DET","MR_GB_CATEGORY_TYPE_HDR","MR_GB_SCALE","MR_GB_SCALE_DET","MR_HONOR_ELIG_CD","MR_IMPORT_STU_CRS_HDR","MR_IPR_ELIG_CD","MR_IPR_PRINT_HDR",
+    "MR_IPR_RUN","MR_IPR_STU_AT_RISK","MR_IPR_STU_ELIGIBLE","MR_IPR_VIEW_ATT","MR_IPR_VIEW_ATT_IT","MR_IPR_VIEW_DET","MR_IPR_VIEW_HDR","MR_MARK_SUBS","MR_PRINT_HDR","MR_RC_STU_AT_RISK","MR_RC_STU_ATT_VIEW",
+    "MR_RC_STU_ELIGIBLE","MR_RC_VIEW_ALT_LANG","MR_RC_VIEW_ATT","MR_RC_VIEW_ATT_INT","MR_RC_VIEW_DET","MR_RC_VIEW_GPA","MR_RC_VIEW_GRD_SC","MR_RC_VIEW_HDR","MR_RC_VIEW_HONOR","MR_RC_VIEW_LTDB",
+    "MR_RC_VIEW_MPS","MR_RC_VIEW_SC_MP","MR_RC_VIEW_SP","MR_RC_VIEW_SP_COLS","MR_RC_VIEW_SP_MP","MR_RC_VIEW_STUCMP","MR_SC_COMP_COMS","MR_SC_COMP_CRS","MR_SC_COMP_DET","MR_SC_COMP_DET_ALT_LANG",
+    "MR_SC_COMP_HDR","MR_SC_COMP_MRKS","MR_SC_COMP_STU","MR_SC_ST_STANDARD","MR_SC_STU_COMMENT","MR_SC_STU_COMP","MR_SC_STU_CRS_COMM","MR_SC_STU_CRS_COMP","MR_SC_STU_TAKEN","MR_SC_STU_TEA",
+    "MR_SC_STU_TEA_XREF","MR_SC_STU_TEXT","MR_SC_STUSTU_TAKEN","MR_SC_TEA_COMP","MR_STATE_COURSES","MR_STU_COMMENTS","MR_STU_CRSEQU_ABS","MR_STU_CRSEQU_CRD","MR_STU_CRSEQU_MARK","MR_STU_GPA","MR_STU_HONOR",
+    "MR_STU_OUT_COURSE","MR_STU_TEXT","MR_STU_XFER_BLDGS","MR_STU_XFER_RUNS","MR_TRN_PRINT_HDR","MR_TRN_PRT_STU_BRK","MR_TRN_PRT_STU_DET","MR_TX_CREDIT_SETUP","MR_YEAREND_RUN","PP_MONTH_DAYS",
+    "PP_STUDENT_CACHE","PP_STUDENT_TEMP","REG_ACT_PREREQ","REG_ACTIVITY_ADV","REG_ACTIVITY_DET","REG_ACTIVITY_ELIG","REG_ACTIVITY_HDR","REG_ACTIVITY_INEL","REG_ACTIVITY_MP","REG_CAL_DAYS",
+    "REG_CAL_DAYS_LEARNING_LOC","REG_CALENDAR","REG_CFG","REG_CFG_ALERT","REG_CFG_ALERT_CODE","REG_CFG_ALERT_DEF_CRIT","REG_CFG_ALERT_DEFINED","REG_CFG_ALERT_UDS_CRIT_KTY","REG_CFG_ALERT_UDS_KTY",
+    "REG_CFG_ALERT_USER","REG_CFG_EW_APPLY","REG_CFG_EW_COMBO","REG_CFG_EW_COND","REG_CFG_EW_REQ_ENT","REG_CFG_EW_REQ_FLD","REG_CFG_EW_REQ_WD","REG_CFG_EW_REQUIRE","REG_CYCLE","REG_DISTRICT",
+    "REG_DURATION","REG_ENTRY_WITH","REG_EVENT_ACTIVITY","REG_GEO_PLAN_AREA","REG_GEO_ZONE_DATES","REG_GEO_ZONE_DET","REG_GEO_ZONE_HDR","REG_MP_DATES","REG_MP_WEEKS","REG_TRACK","REG_USER_PLAN_AREA",
+    "REG_YREND_RUN","REG_YREND_RUN_CAL","REG_YREND_RUN_CRIT","REG_YREND_STUDENTS","REGPROG_YREND_RUN","REGPROG_YREND_TABS","REGTB_SCHOOL_YEAR","SCHD_CFG","SCHD_CFG_DISC_OFF","SCHD_CFG_ELEM_AIN",
+    "SCHD_CFG_FOCUS_CRT","SCHD_CFG_HOUSETEAM","SCHD_CFG_HRM_AIN","SCHD_CFG_INTERVAL","SCHD_MS","SCHD_MS_SCHEDULE","SCHD_MSB_MEET_HDR","SCHD_PARAMS","SCHD_PARAMS_SORT","SCHD_PERIOD","SCHD_RUN",
+    "SCHD_SCAN_REQUEST","SCHD_STU_PREREQOVER","SCHD_STU_RECOMMEND","SCHD_STU_REQ","SCHD_STU_REQ_MP","SCHD_STU_STATUS","SCHD_TIMETABLE","SCHD_TIMETABLE_HDR","SCHD_UNSCANNED","SCHD_YREND_RUN",
+    "SEC_USER","SIF_GUID_ATT_CLASS","SIF_GUID_ATT_CODE","SIF_GUID_ATT_DAILY","SIF_GUID_CALENDAR_SUMMARY","SIF_GUID_REG_EW","SIF_GUID_TERM","SPI_CONFIG_EXTENSION_ENVIRONMENT","SSP_YEAREND_RUN",
+    "STATE_OCR_BLDG_CFG","STATE_OCR_BLDG_MARK_TYPE","STATE_OCR_BLDG_RET_EXCLUDED_CALENDAR","STATE_OCR_DETAIL","STATE_OCR_DIST_ATT","STATE_OCR_DIST_CFG","STATE_OCR_DIST_COM","STATE_OCR_DIST_DISC",
+    "STATE_OCR_DIST_EXP","STATE_OCR_DIST_LTDB_TEST","STATE_OCR_DIST_STU_DISC_XFER","STATE_OCR_NON_STU_DET","STATE_OCR_QUESTION","STATE_OCR_SUMMARY","Statetb_Ocr_Record_types","TAC_ISSUE",
+    "TAC_SEAT_HRM_DET","TAC_SEAT_HRM_HDR","TAC_SEAT_PER_DET","TAC_SEAT_PER_HDR")
+
+    # {{MATCH}} = "ROW_IDENTITY = t.ROW_IDENTITY", "AND STUDENT_ID = t.STUDENT_ID", etc.
+    # {{WHERE}} = "AND t.SCHOOL_YEAR > 2020"
+    $sqlTemplate = 'INNER JOIN REG ON 1=2
+    UNION ALL
+    SELECT j=
+    CONVERT(VARCHAR(8000),(SELECT {{COLUMNS}} FROM {{TABLE}} WHERE 1=1 AND {{MATCH}} FOR JSON PATH, INCLUDE_NULL_VALUES))
+    FROM {{TABLE}} t WHERE 1=1 {{WHERE}}'
+
+    #table
+    $sqlTemplate = $sqlTemplate -replace '{{TABLE}}',"$($Table)"
+
+    #Get all the columns for this table and specify them in the SELECT statement so we can exclude the SSN and FMS_EMPL_NUMBER if needed.
+    if ($IncludeSSN) {
+        $columns = '*'
+    } else {
+        $columns = Receive-eSPBulkDefitionFields | #table definitions were included in this module.
+            ConvertFrom-CSV |
+            Where-Object -Property tblName -eq $Table |
+            Select-Object -ExpandProperty colName |
+            Where-Object { @('SSN','FMS_EMPL_NUMBER') -notcontains $PSItem }
+    }
+
+    #we need to trim STUDENT_ID from the columns if it is there.
+    if ($columns.IndexOf('STUDENT_ID') -ne -1) {
+        $columns[$columns.IndexOf('STUDENT_ID')] = 'TRIM(STUDENT_ID) AS STUDENT_ID'
+    }
+
+    $sqlTemplate = $sqlTemplate -replace '{{COLUMNS}}',"$($columns -join ',')"
+
+    #MATCH
+    if ($columns -contains 'ROW_IDENTITY') {
+        $sqlTemplate = $sqlTemplate -replace '{{MATCH}}',"ROW_IDENTITY = t.ROW_IDENTITY"
+    } else {
+        #We need to pull the primary keys for this table to make sure we match exactly.
+        $primaryKeys = Import-CSV -Path "$HOME\.config\eSchool\eSchoolDatabase.csv" |
+            Where-Object -Property tblName -eq "$Table" |
+            Where-Object -Property colIsIdentity -eq 1 | ForEach-Object {
+                "$($PSItem.colName) = t.$($PSItem.colName)"
+            }
+
+        $sqlTemplate = $sqlTemplate -replace '{{MATCH}}',"$($primaryKeys -join ' AND ')"
+    }
+
+    #WHERE
+
+    #Default Limit to Current School Year. This leaves the {{WHERE}} in the SQL template so we can replace it later.
+    if (-Not($DoNotLimitSchoolYear) -and ($tables_with_years -contains $tblName)) {
+        $sqlTemplate = $sqlTemplate -replace '{{WHERE}}'," AND SCHOOL_YEAR = (SELECT CASE WHEN MONTH(GetDate()) > 6 THEN YEAR(GetDate()) + 1 ELSE YEAR(GetDate()) END) {{WHERE}}"
+    }
+
+    if ($AdditionalSQL) {
+
+        #if the incoming SQL does not have an AND then we need to append it to the existing WHERE clause.
+        if ($additionalSQL.Substring(0,3) -eq 'AND') {
+            $sqlTemplate = $sqlTemplate -replace '{{WHERE}}'," $AdditionalSQL"
+        } else {
+            $sqlTemplate = $sqlTemplate -replace '{{WHERE}}'," AND $AdditionalSQL"
+        }
+
+    } else {
+        $sqlTemplate = $sqlTemplate -replace '{{WHERE}}','' #remove the WHERE clause.
+    }
+
+    $newDefinition = New-espDefinitionTemplate -InterfaceId "$InterfaceId" -Description "$Description"
+
+    $newDefinition.UploadDownloadDefinition.InterfaceHeaders += New-eSPInterfaceHeader `
+        -InterfaceId $InterfaceId `
+        -HeaderId $InterfaceId `
+        -HeaderOrder 1 `
+        -FileName $filename `
+        -TableName "atttb_state_grp" `
+        -Description "$description" `
+        -AdditionalSql $sqlTemplate `
+        -Delimiter $delimiter
+    
+    $newDefinition.UploadDownloadDefinition.InterfaceHeaders[0].InterfaceDetails = @(
+        (New-eSPDefinitionColumn `
+            -InterfaceId "$InterfaceId" `
+            -HeaderId "$InterfaceId" `
+            -TableName "atttb_state_grp" `
+            -FieldId 1 `
+            -FieldOrder 1 `
+            -ColumnName "CODE" `
+            -FieldLength 9999)
+    )
+
+    $jsonpayload = $newDefinition | ConvertTo-Json -Depth 99
+
+    Write-Verbose ($jsonpayload)
+
+    if ($Force) {
+        Remove-eSPInterfaceId -InterfaceId "$InterfaceId"
+    }
+
+    $response = Invoke-RestMethod -Uri "$($eSchoolSession.Url)/Utility/SaveUploadDownload" `
+        -WebSession $eSchoolSession.Session `
+        -Method "POST" `
+        -ContentType "application/json; charset=UTF-8" `
+        -Body $jsonpayload `
+        -MaximumRedirection 0
+
+
+    if ($response.PageState -eq 1) {
+        Write-Warning "Download Definition failed."
+        return [PSCustomObject]@{
+            'Tables' = $tables -join ','
+            'Success' = $False
+            'Message' = $($response.ValidationErrorMessages)
+        }
+    } elseif ($response.PageState -eq 2) {
+        Write-Host "Download definition created successfully. You can review it here: $($eSchoolSession.Url)/Utility/UploadDownload?interfaceId=$($InterfaceId)" -ForegroundColor Green
+        return [PSCustomObject]@{
+            'Tables' = $tables -join ','
+            'Success' = $True
+            'Message' = $response
+        }
+        Connect-ToeSchool #Must reauthenticate.
+    } else {
+        throw "Failed."
+    }
+    
+}

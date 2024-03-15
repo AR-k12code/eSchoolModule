@@ -10,7 +10,7 @@
     RootModule = 'eSchoolModule.psm1'
     
     # Version number of this module.
-    ModuleVersion = '24.2.6'
+    ModuleVersion = '24.3.15'
     
     # ID used to uniquely identify this module
     GUID = 'b9c99138-35f7-4095-a9e1-5ea07297c903'
@@ -39,7 +39,7 @@
         "Invoke-eSPExecuteSearch","Invoke-eSPUploadDefinition","New-eSPBulkDownloadDefinition","New-eSPDefinition","New-eSPDefinitionColumn","New-eSPDefinitionTemplate",
         "New-eSPEmailDefinitions","New-eSPGuardianDefinitions","New-eSPInterfaceHeader","New-eSPSearchListField","New-eSPSearchPredicate","Receive-eSPAdditionalREGMAINTTables",
         "Remove-eSchoolConfig","Remove-eSPInterfaceId","Set-eSchoolConfig","Show-eSchoolConfig","Submit-eSPFile","Update-eSchoolModule","Update-eSchoolPassword","New-eSPAttUploadDefinitions",
-        "New-eSPMealStatusDefinitions"
+        "New-eSPMealStatusDefinitions","New-eSPJSONLDefinition"
     
     # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
     CmdletsToExport = @()

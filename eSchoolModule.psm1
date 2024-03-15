@@ -12422,8 +12422,8 @@ function New-eSPJSONLDefinition {
         [Parameter(Mandatory=$false)][string]$filename, #If you want to specify the filename, otherwise it will be the InterfaceId since its a 1:1 definition/file.
         [parameter(Mandatory=$false,HelpMessage="Must begin with AND")][String]$AdditionalSQL = $null, #additional SQL
         [parameter(Mandatory=$false)][Switch]$DoNotLimitSchoolYear, #otherwise all queries are limited to the current school year if the table has the SCHOOL_YEAR in it.
-        [parameter(Mandatory=$false)]$Delimiter = ',',
-        [parameter(Mandatory=$false)]$Description = "eSchoolModule Bulk Definition",
+        [parameter(Mandatory=$false)]$Delimiter = ',', #Does not matter here.
+        [parameter(Mandatory=$false)]$Description = "eSchoolModule JSONL Definition",
         [parameter(Mandatory=$false)]$FilePrefix = '', #Make all files start with this. Something like "GUARD_"
         [parameter(Mandatory=$false)][Switch]$Force, #overwrite existing.
         [parameter(Mandatory=$false)][switch]$IncludeSSN #If the table has SSN or FMS_EMPL_NUMBER then include it. Otherwise this is excluded by default.
@@ -12540,7 +12540,7 @@ function New-eSPJSONLDefinition {
         -InterfaceId $InterfaceId `
         -HeaderId $InterfaceId `
         -HeaderOrder 1 `
-        -FileName $filename `
+        -FileName "$($FilePrefix)$($filename)" `
         -TableName "atttb_state_grp" `
         -Description "$description" `
         -AdditionalSql $sqlTemplate `
@@ -12570,24 +12570,27 @@ function New-eSPJSONLDefinition {
         -Method "POST" `
         -ContentType "application/json; charset=UTF-8" `
         -Body $jsonpayload `
-        -MaximumRedirection 0
-
+        -MaximumRedirection 0 `
+        -SkipHttpErrorCheck
 
     if ($response.PageState -eq 1) {
-        Write-Warning "Download Definition failed."
+        Write-Error "Download Definition failed. $($response.ValidationErrorMessages)"
         return [PSCustomObject]@{
-            'Tables' = $tables -join ','
+            'Tables' = $table
             'Success' = $False
             'Message' = $($response.ValidationErrorMessages)
         }
     } elseif ($response.PageState -eq 2) {
         Write-Host "Download definition created successfully. You can review it here: $($eSchoolSession.Url)/Utility/UploadDownload?interfaceId=$($InterfaceId)" -ForegroundColor Green
+
+        Connect-ToeSchool #Must reauthenticate.
+
         return [PSCustomObject]@{
-            'Tables' = $tables -join ','
+            'Tables' = $table
             'Success' = $True
             'Message' = $response
         }
-        Connect-ToeSchool #Must reauthenticate.
+        
     } else {
         throw "Failed."
     }

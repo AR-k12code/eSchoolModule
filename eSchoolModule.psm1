@@ -12517,7 +12517,7 @@ function New-eSPJSONLDefinition {
     #WHERE
 
     #Default Limit to Current School Year. This leaves the {{WHERE}} in the SQL template so we can replace it later.
-    if (-Not($DoNotLimitSchoolYear) -and ($tables_with_years -contains $tblName)) {
+    if (-Not($DoNotLimitSchoolYear) -and ($tables_with_years -contains $Table)) {
         $sqlTemplate = $sqlTemplate -replace '{{WHERE}}'," AND SCHOOL_YEAR = (SELECT CASE WHEN MONTH(GetDate()) > 6 THEN YEAR(GetDate()) + 1 ELSE YEAR(GetDate()) END) {{WHERE}}"
     }
 

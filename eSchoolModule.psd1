@@ -10,7 +10,7 @@
     RootModule = 'eSchoolModule.psm1'
     
     # Version number of this module.
-    ModuleVersion = '24.3.15'
+    ModuleVersion = '24.3.17'
     
     # ID used to uniquely identify this module
     GUID = 'b9c99138-35f7-4095-a9e1-5ea07297c903'
@@ -37,9 +37,9 @@
     FunctionsToExport = "Assert-eSPSession","Clear-eSPFailedTask","Connect-ToeSchool","Disconnect-FromeSchool","Get-eSPDefinitionsUpdates","Get-eSPFile","Get-eSPFileList",
         "Get-eSPMasterSchedule","Get-eSPSchools","Get-eSPSecRoles","Get-eSPSecUsers","Get-eSPStaffCatalog","Get-eSPStudents","Get-eSPTaskList","Invoke-eSPDownloadDefinition",
         "Invoke-eSPExecuteSearch","Invoke-eSPUploadDefinition","New-eSPBulkDownloadDefinition","New-eSPDefinition","New-eSPDefinitionColumn","New-eSPDefinitionTemplate",
-        "New-eSPEmailDefinitions","New-eSPGuardianDefinitions","New-eSPInterfaceHeader","New-eSPSearchListField","New-eSPSearchPredicate","Receive-eSPAdditionalREGMAINTTables",
+        "New-eSPEmailDefinitions","New-eSPGuardianDefinitions","New-eSPInterfaceHeader","New-eSPSearchListField","New-eSPSearchPredicate","Get-eSPAdditionalREGMAINTTables",
         "Remove-eSchoolConfig","Remove-eSPInterfaceId","Set-eSchoolConfig","Show-eSchoolConfig","Submit-eSPFile","Update-eSchoolModule","Update-eSchoolPassword","New-eSPAttUploadDefinitions",
-        "New-eSPMealStatusDefinitions","New-eSPJSONLDefinition"
+        "New-eSPMealStatusDefinitions","New-eSPJSONLDefinition","Get-eSPTablesWithYear","Get-eSPTableDefinitions","Get-eSPTableNames","Get-eSPTablePrimaryKeys","Get-eSPTableColumns"
     
     # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
     CmdletsToExport = @()

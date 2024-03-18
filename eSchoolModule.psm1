@@ -7,7 +7,7 @@ function Update-eSchoolModule {
     #>
 
     Param(
-        [Parameter(Mandatory = $false)][switch]$Dev
+        [Parameter(Mandatory = $false)][Switch]$Dev
     )
 
     if (-Not $(New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
@@ -58,8 +58,8 @@ function Set-eSchoolConfig {
                     $true
                 }
             })]
-        [string]$ConfigName = "DefaultConfig",
-        [Parameter(Mandatory = $true)][string]$username
+        [String]$ConfigName = "DefaultConfig",
+        [Parameter(Mandatory = $true)][String]$username
     )
 
     #ensure the configuration folder exists under this users local home.
@@ -126,7 +126,7 @@ function Remove-eSchoolConfig {
         Remove-eSchoolConfig -ConfigName "Gentry"
     #>
     Param(
-        [Parameter(Mandatory = $true)][string]$ConfigName
+        [Parameter(Mandatory = $true)][String]$ConfigName
     )
 
     if (Test-Path "$($HOME)\.config\eSchool\$($ConfigName).json") {
@@ -148,7 +148,7 @@ function Update-eSchoolPassword {
         Show-eSchoolConfig
     #>
     Param(
-        [Parameter(Mandatory = $false)][string]$ConfigName="DefaultConfig",
+        [Parameter(Mandatory = $false)][String]$ConfigName="DefaultConfig",
         [Parameter(Mandatory = $false)][securestring]$Password
     )
 
@@ -183,9 +183,9 @@ function Connect-ToeSchool {
     #>
 
     Param(
-        [Parameter(Mandatory=$false)][string]$ConfigName = "DefaultConfig",
+        [Parameter(Mandatory=$false)][String]$ConfigName = "DefaultConfig",
         [Parameter(Mandatory=$false)][Switch]$TrainingSite,
-        [Parameter(Mandatory=$false)][string]$Database
+        [Parameter(Mandatory=$false)][String]$Database
     )
 
     if (Test-Path "$($HOME)\.config\eSchool\$($ConfigName).json") {
@@ -311,7 +311,7 @@ function Disconnect-FromeSchool {
 function Assert-eSPSession {
 
     Param(
-        [Parameter(Mandatory=$false)][switch]$Force #sometimes we need to reauthenticate. Especially after bulk creation of Download Definitions.
+        [Parameter(Mandatory=$false)][Switch]$Force #sometimes we need to reauthenticate. Especially after bulk creation of Download Definitions.
     )
 
     Try {
@@ -365,12 +365,12 @@ function Get-eSPFile {
 
     [CmdletBinding(DefaultParametersetName="FileName")]
     Param(
-        [Parameter(Mandatory=$true,ParameterSetName="FileName",ValueFromPipelineByPropertyName=$true,Position=0)][Alias('RawFileName')][string]$FileName, #Download an exact named file.
-        [Parameter(Mandatory=$true,ParameterSetName="NameLike")][string]$NameLike, #Download the latest file that matches. Example would be HomeAccessPasswords* where there are possibly hundreds of unknown files.
-        [Parameter(Mandatory=$false)][string]$OutFile,
-        [Parameter(Mandatory=$false)][switch]$AsObject,
-        [Parameter(Mandatory=$false)][switch]$Raw,
-        [Parameter(Mandatory=$false)][string]$Delimeter = ',' #This could be Pipe or whatever the eSchool Definition uses.
+        [Parameter(Mandatory=$true,ParameterSetName="FileName",ValueFromPipelineByPropertyName=$true,Position=0)][Alias('RawFileName')][String]$FileName, #Download an exact named file.
+        [Parameter(Mandatory=$true,ParameterSetName="NameLike")][String]$NameLike, #Download the latest file that matches. Example would be HomeAccessPasswords* where there are possibly hundreds of unknown files.
+        [Parameter(Mandatory=$false)][String]$OutFile,
+        [Parameter(Mandatory=$false)][Switch]$AsObject,
+        [Parameter(Mandatory=$false)][Switch]$Raw,
+        [Parameter(Mandatory=$false)][String]$Delimeter = ',' #This could be Pipe or whatever the eSchool Definition uses.
     )
 
     Begin {
@@ -479,7 +479,7 @@ function Remove-eSPFile {
     #>
 
     Param(
-        [Parameter(Mandatory=$true,Position=0)][string]$FileName
+        [Parameter(Mandatory=$true,Position=0)][String]$FileName
     )
 
     Assert-eSPSession
@@ -501,9 +501,9 @@ function Invoke-eSPDownloadDefinition {
     #>
 
     Param(
-        [Parameter(Mandatory=$true)][ValidateScript( { ($PSitem.Length) -eq 5} )][string]$InterfaceID,
-        [Parameter(Mandatory=$false)][switch]$ActiveStudentsOnly,
-        [Parameter(Mandatory=$false)][switch]$Wait #wait until the scheduled task is complete or errored.
+        [Parameter(Mandatory=$true)][ValidateScript( { ($PSitem.Length) -eq 5} )][String]$InterfaceID,
+        [Parameter(Mandatory=$false)][Switch]$ActiveStudentsOnly,
+        [Parameter(Mandatory=$false)][Switch]$Wait #wait until the scheduled task is complete or errored.
     )
 
     Assert-eSPSession
@@ -639,12 +639,12 @@ function Invoke-eSPUploadDefinition {
     #>
 
     Param(
-        [Parameter(Mandatory=$true)][ValidateScript( { ($PSitem.Length) -eq 5} )][string]$InterfaceID,
-        [Parameter(Mandatory=$false)][ValidateSet("R","V")][String][string]$RunMode = 'V',
-        [Parameter(Mandatory=$false)][switch]$DoNotUpdateExistingRecords, #Do you want the upload definition to update existing records?
-        [Parameter(Mandatory=$false)][switch]$InsertNewRecords, #Do you want the upload definition to insert new records?
-        [Parameter(Mandatory=$false)][switch]$UpdateBlankRecords, #Do you want the upload definition to update blank records?
-        [Parameter(Mandatory=$false)][switch]$Wait #wait until the scheduled task is complete or errored.
+        [Parameter(Mandatory=$true)][ValidateScript( { ($PSitem.Length) -eq 5} )][String]$InterfaceID,
+        [Parameter(Mandatory=$false)][ValidateSet("R","V")][String][String]$RunMode = 'V',
+        [Parameter(Mandatory=$false)][Switch]$DoNotUpdateExistingRecords, #Do you want the upload definition to update existing records?
+        [Parameter(Mandatory=$false)][Switch]$InsertNewRecords, #Do you want the upload definition to insert new records?
+        [Parameter(Mandatory=$false)][Switch]$UpdateBlankRecords, #Do you want the upload definition to update blank records?
+        [Parameter(Mandatory=$false)][Switch]$Wait #wait until the scheduled task is complete or errored.
     )
 
     Assert-eSPSession
@@ -778,9 +778,9 @@ function Get-eSPTaskList {
     #>
 
     Param(
-        [Parameter(Mandatory = $false)][switch]$ActiveTasksOnly,
-        [Parameter(Mandatory = $false)][switch]$ErrorsOnly,
-        [Parameter(Mandatory = $false)][switch]$SilentErrors
+        [Parameter(Mandatory = $false)][Switch]$ActiveTasksOnly,
+        [Parameter(Mandatory = $false)][Switch]$ErrorsOnly,
+        [Parameter(Mandatory = $false)][Switch]$SilentErrors
     )
 
     Assert-eSPSession
@@ -829,7 +829,7 @@ function Clear-eSPFailedTask {
     #>
 
     Param(
-        [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true)][string]$TaskKey
+        [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true)][String]$TaskKey
     )
 
     Begin {
@@ -861,7 +861,7 @@ function Get-eSPSchools {
     #>
 
     Param(
-        [Parameter(Mandatory=$false)][switch]$All
+        [Parameter(Mandatory=$false)][Switch]$All
     )
 
     Assert-eSPSession
@@ -893,14 +893,14 @@ function Get-eSPStudents {
 
     [CmdletBinding(DefaultParametersetName="default")]
     Param(
-        [Parameter(Mandatory=$false,ParameterSetName="StudentID")][Alias('ID')][int]$StudentID, #ID of the Building
+        [Parameter(Mandatory=$false,ParameterSetName="StudentID",Position=0)][Alias('ID')][int]$StudentID, #ID of the Building
         [Parameter(Mandatory=$false,ParameterSetName="default")][int]$Building, #ID of the Building
         [Parameter(Mandatory=$false)]
         [ValidateSet('PK','KA','KF','KP','SS','SM','EE','GG','01','02','03','04','05','06','07','08','09','10','11','12')]
         $Grade,
-        [Parameter(Mandatory=$false,ParameterSetName="all")][switch]$InActive,
-        [Parameter(Mandatory=$false,ParameterSetName="all")][switch]$Graduated,
-        [Parameter(Mandatory=$false,ParameterSetName="all")][switch]$All, #Include Graduated and Inactive.
+        [Parameter(Mandatory=$false,ParameterSetName="all")][Switch]$InActive,
+        [Parameter(Mandatory=$false,ParameterSetName="all")][Switch]$Graduated,
+        [Parameter(Mandatory=$false,ParameterSetName="all")][Switch]$All, #Include Graduated and Inactive.
         [Parameter(Mandatory=$false)]$PageSize = 250,
         [Parameter(Mandatory=$false)]
         [ValidateSet("reg_academic","reg_activity_det","reg_user-R-106","reg_contact_phone","reg_contact","reg_user-R-5050","reg_user-R-5070","reg","med_dental","reg_disability","reg_user-R-5020","reg_user-R-5030","reg_user-R-5000","reg_user-R-5040","reg_user-R-105","reg_emergency","reg_entry_with","med_growth","med_hearing","reg_exclude_honor","schd_ms","reg_legal_info","reg_med_alerts","med_notes","med_issued","reg_personal","schd_stu_status","reg_user-R-5090","reg_user-R-102","reg_ethnicity","reg_notes","reg_stu_contact","reg_travel","reg_programs-arses","reg_programs-arell","reg_programs-argt","reg_programs-ar_sa","reg_programs-arrs")]
@@ -1032,7 +1032,7 @@ function Invoke-eSPExecuteSearch {
     #>
 
     Param(
-        [Parameter(Mandatory=$true)][ValidateSet("REGMAINT","UPLOADDEF","DUPLICATECONTACT","BUILDINGDEF","STAFFCATALOG","MASTERSCHEDULE",'COURSECAT','MPS','CALENDAR','USER')][string]$SearchType,
+        [Parameter(Mandatory=$true)][ValidateSet("REGMAINT","UPLOADDEF","DUPLICATECONTACT","BUILDINGDEF","STAFFCATALOG","MASTERSCHEDULE",'COURSECAT','MPS','CALENDAR','USER')][String]$SearchType,
         [Parameter(Mandatory=$false)]$SearchParams,
         [Parameter(Mandatory=$false)][int]$pageSize = 250,
         [Parameter(Mandatory=$false)][int]$stopAfterPage
@@ -1237,7 +1237,7 @@ function New-eSPInterfaceHeader {
         [Parameter(Mandatory=$true)]$TableName,
         [Parameter(Mandatory=$false)]$AdditionalSql = "",
         [Parameter(Mandatory=$false)]$Delimiter = ","
-        # [Parameter(Mandatory=$false)][switch]$UploadDef #if this is an upload definition we need additional information.
+        # [Parameter(Mandatory=$false)][Switch]$UploadDef #if this is an upload definition we need additional information.
     )
 
     $interfaceHeader = [ordered]@{
@@ -1285,7 +1285,7 @@ function New-eSPDefinitionColumn {
     Param(
         [Parameter(Mandatory=$true)]$InterfaceID,
         [Parameter(Mandatory=$true)]$HeaderID,
-        [Parameter(Mandatory=$true)][string]$FieldId, #must be a string.
+        [Parameter(Mandatory=$true)][String]$FieldId, #must be a string.
         [Parameter(Mandatory=$true)]$FieldOrder,
         [Parameter(Mandatory=$true)]$TableName,
         [Parameter(Mandatory=$true)]$ColumnName,
@@ -1345,7 +1345,7 @@ function New-eSPBulkDownloadDefinition {
         [Parameter(Mandatory=$false)]$Description = "eSchoolModule Bulk Definition",
         [Parameter(Mandatory=$false)]$FilePrefix = '', #Make all files start with this. Something like "GUARD_"
         [Parameter(Mandatory=$false)][Switch]$Force, #overwrite existing.
-        [Parameter(Mandatory=$false)][switch]$IncludeSSN #If the table has SSN or FMS_EMPL_NUMBER then include it. Otherwise this is excluded by default.
+        [Parameter(Mandatory=$false)][Switch]$IncludeSSN #If the table has SSN or FMS_EMPL_NUMBER then include it. Otherwise this is excluded by default.
     )
 
     Assert-eSPSession
@@ -1662,7 +1662,7 @@ function New-eSPEmailDefinitions {
     #>
 
     Param(
-        [Parameter(Mandatory=$false)][switch]$Force
+        [Parameter(Mandatory=$false)][Switch]$Force
     )
 
     Assert-eSPSession
@@ -1917,7 +1917,7 @@ function New-eSPHACUploadDefinition {
     #>
     
     Param(
-        [Parameter(Mandatory=$false)][switch]$Force
+        [Parameter(Mandatory=$false)][Switch]$Force
     )
 
     Assert-eSPSession
@@ -2120,32 +2120,62 @@ function New-eSPJSONLDefinition {
 
     #>
     Param(
-        [Parameter(Mandatory=$true)][string]$Table, #Single Table.
-        [Parameter(Mandatory=$false)][string]$Columns, #If you want to specify the columns, otherwise it will be the columns for the table (excluding SSN and FMS_EMPL_NUMBER by default.)
-        [Parameter(Mandatory=$false)][switch]$PKColumnsOnly, #Primary Key columns only. This is needed to find deleted records.
+        [Parameter(Mandatory=$true)][String]$Table, #Single Table.
+        [Parameter(Mandatory=$false)][String]$Columns, #Comma separated string with no spaces, otherwise it will be the columns for the table (excluding SSN and FMS_EMPL_NUMBER by default.)
+        [Parameter(Mandatory=$false)][Switch]$PKColumnsOnly, #Primary Key columns only. This is needed to find deleted records.
         [Parameter(Mandatory=$true)][ValidateScript( { ($PSitem.Length) -eq 5} )]$InterfaceId,
-        [Parameter(Mandatory=$false)][string]$filename, #If you want to specify the filename, otherwise it will be the InterfaceId since its a 1:1 definition/file.
+        [Parameter(Mandatory=$false)][String]$filename, #If you want to specify the filename, otherwise it will be the InterfaceId since its a 1:1 definition/file.
         [Parameter(Mandatory=$false)][String]$AdditionalSQL = $null, #additional SQL
         [Parameter(Mandatory=$false)][Switch]$DoNotLimitSchoolYear, #otherwise all queries are limited to the current school year if the table has the SCHOOL_YEAR in it.
         [Parameter(Mandatory=$false)]$Delimiter = ',', #Does not matter here since this returns a single column.
         [Parameter(Mandatory=$false)]$Description = "eSchoolModule JSONL Definition",
         [Parameter(Mandatory=$false)]$FilePrefix = '', #Make all files start with this. Something like "GUARD_"
         [Parameter(Mandatory=$false)][Switch]$Force, #overwrite existing.
-        [Parameter(Mandatory=$false)][switch]$IncludeSSN #If the table has SSN or FMS_EMPL_NUMBER then include it. Otherwise this is excluded by default.
+        [Parameter(Mandatory=$false)][Switch]$IncludeSSN, #If the table has SSN or FMS_EMPL_NUMBER then include it. Otherwise this is excluded by default.
+        [Parameter(Mandatory=$false)][switch]$DoNotSubmit #Do not submit the definition to eSchool. Just return it so we can add more Interface Headers.
     )
 
-    Assert-eSPSession
+    $newDefinition = New-espDefinitionTemplate -InterfaceId "$InterfaceId" -Description "$Description"
 
-    if ($AdditionalSQL) {
-        $sqlspecified = $True
-    }
+    #the first HeaderId will always be the InterfaceId. All others will need to be different.
+    $newDefinition.UploadDownloadDefinition.InterfaceHeaders += New-eSPJSONLInterfaceHeader @PSBoundParameters -HeaderId $InterfaceId 
 
-    if (-NOt($filename)) {
-        $filename = $InterfaceId
+    #this will need to be submitted via the Submit-eSPCreateNewDefinition function.
+    if ($DoNotSubmit) {
+        return $newDefinition 
+    } else {
+        Submit-eSPCreateNewDefinition -Definition $newDefinition
     }
+        
+}
+
+function New-eSPJSONLInterfaceHeader {
+    Param(
+        [Parameter(Mandatory=$true)][String]$Table, #Single Table.
+        [Parameter(Mandatory=$false)]$Columns, #If you want to specify the columns, otherwise it will be the columns for the table (excluding SSN and FMS_EMPL_NUMBER by default.)
+        [Parameter(Mandatory=$false)][Switch]$PKColumnsOnly, #Primary Key columns only. This is needed to find deleted records.
+        [Parameter(Mandatory=$true)][ValidateScript( { ($PSitem.Length) -eq 5} )]$InterfaceId,
+        [Parameter(Mandatory=$false)][String]$filename, #If you want to specify the filename, otherwise it will be the InterfaceId since its a 1:1 definition/file.
+        [Parameter(Mandatory=$false)][String]$AdditionalSQL = $null, #additional SQL
+        [Parameter(Mandatory=$false)][Switch]$DoNotLimitSchoolYear, #otherwise all queries are limited to the current school year if the table has the SCHOOL_YEAR in it.
+        [Parameter(Mandatory=$false)]$Delimiter = ',', #Does not matter here since this returns a single column.
+        [Parameter(Mandatory=$false)]$Description = "eSchoolModule JSONL Definition",
+        [Parameter(Mandatory=$false)]$FilePrefix = '', #Make all files start with this. Something like "GUARD_"
+        [Parameter(Mandatory=$false)][Switch]$Force, #Doesn't apply here but has to be here so I can pass the same params from New-eSPJSONLDefinition.
+        [Parameter(Mandatory=$false)][Switch]$IncludeSSN, #If the table has SSN or FMS_EMPL_NUMBER then include it. Otherwise this is excluded by default.
+        [Parameter(Mandatory=$false)][switch]$DoNotSubmit, #Does nothing here.
+        [Parameter(Mandatory=$true)][String]$HeaderId, #File Header.
+        [Parameter(Mandatory=$false)][int]$HeaderOrder = 1
+    )
+
+    $newDefinition = New-espDefinitionTemplate -InterfaceId "$InterfaceId" -Description "$Description"
 
     #Import-CSV ".\resources\eSchool Tables with SCHOOL_YEAR.csv" | Select-Object -ExpandProperty tblName
     $tables_with_years = Get-eSPTablesWithYears
+
+    if (-Not($filename)) {
+        $filename = "$($InterfaceId).jsonl"
+    }
 
     # {{MATCH}} = "ROW_IDENTITY = t.ROW_IDENTITY", "AND STUDENT_ID = t.STUDENT_ID", etc.
     # {{WHERE}} = "AND t.SCHOOL_YEAR > 2020"
@@ -2216,22 +2246,20 @@ function New-eSPJSONLDefinition {
         $sqlTemplate = $sqlTemplate -replace '{{WHERE}}','' #remove the WHERE clause.
     }
 
-    $newDefinition = New-espDefinitionTemplate -InterfaceId "$InterfaceId" -Description "$Description"
-
-    $newDefinition.UploadDownloadDefinition.InterfaceHeaders += New-eSPInterfaceHeader `
+    $eSPJSONInterfaceHeader = New-eSPInterfaceHeader `
         -InterfaceId $InterfaceId `
-        -HeaderId $InterfaceId `
-        -HeaderOrder 1 `
+        -HeaderId $HeaderId `
+        -HeaderOrder $HeaderOrder `
         -FileName "$($FilePrefix)$($filename)" `
         -TableName "atttb_state_grp" `
         -Description "$description" `
         -AdditionalSql $sqlTemplate `
         -Delimiter $delimiter
     
-    $newDefinition.UploadDownloadDefinition.InterfaceHeaders[0].InterfaceDetails = @(
+    $eSPJSONInterfaceHeader.InterfaceDetails = @(
         (New-eSPDefinitionColumn `
             -InterfaceId "$InterfaceId" `
-            -HeaderId "$InterfaceId" `
+            -HeaderId $HeaderId `
             -TableName "atttb_state_grp" `
             -FieldId 1 `
             -FieldOrder 1 `
@@ -2239,7 +2267,27 @@ function New-eSPJSONLDefinition {
             -FieldLength 9999)
     )
 
-    $jsonpayload = $newDefinition | ConvertTo-Json -Depth 99
+    return $eSPJSONInterfaceHeader
+
+}
+
+function Submit-eSPCreateNewDefinition {
+    <#
+    
+        .SYNOPSIS
+        Submit a definition to the eSchool Interface.
+
+        .DESCRIPTION
+        This would already be created by New-eSPDownloadDefinition or New-eSPUploadDefinition. This is just a helper function to submit the definition to the eSchool Interface.
+    
+    #>
+    Param(
+        [Parameter(Mandatory=$true)][Hashtable]$Definition
+    )
+
+    Assert-eSPSession
+    
+    $jsonpayload = $Definition | ConvertTo-Json -Depth 99
 
     Write-Verbose ($jsonpayload)
 
@@ -2276,7 +2324,6 @@ function New-eSPJSONLDefinition {
     } else {
         throw "Failed."
     }
-    
 }
 
 function Get-eSPTableNames {
@@ -2310,7 +2357,7 @@ function Get-eSPTableColumns {
                 $true
             }
         })]
-        [string]$Table
+        [String]$Table
     )
 
     return (Get-eSPTableDefinitions |
@@ -2350,7 +2397,7 @@ function Get-eSPTablePrimaryKeys {
                 $true
             }
         })]
-        [string]$Table
+        [String]$Table
     )
 
     return (Get-eSPTableDefinitions |

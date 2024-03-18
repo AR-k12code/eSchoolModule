@@ -39,7 +39,8 @@
         "Invoke-eSPExecuteSearch","Invoke-eSPUploadDefinition","New-eSPBulkDownloadDefinition","New-eSPDefinition","New-eSPDefinitionColumn","New-eSPDefinitionTemplate",
         "New-eSPEmailDefinitions","New-eSPGuardianDefinitions","New-eSPInterfaceHeader","New-eSPSearchListField","New-eSPSearchPredicate","Get-eSPAdditionalREGMAINTTables",
         "Remove-eSchoolConfig","Remove-eSPInterfaceId","Set-eSchoolConfig","Show-eSchoolConfig","Submit-eSPFile","Update-eSchoolModule","Update-eSchoolPassword","New-eSPAttUploadDefinitions",
-        "New-eSPMealStatusDefinitions","New-eSPJSONLDefinition","Get-eSPTablesWithYear","Get-eSPTableDefinitions","Get-eSPTableNames","Get-eSPTablePrimaryKeys","Get-eSPTableColumns"
+        "New-eSPMealStatusDefinitions","New-eSPJSONLDefinition","Get-eSPTablesWithYear","Get-eSPTableDefinitions","Get-eSPTableNames","Get-eSPTablePrimaryKeys","Get-eSPTableColumns",
+        "New-eSPJSONLInterfaceHeader"
     
     # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
     CmdletsToExport = @()

@@ -215,6 +215,20 @@ $REG | Measure-Object
 #Count             : 725
 ````
 
+That was cool and all but have you ever thought about structured data? Let me introduce to you my friend JSONL.
+````
+$newDefinition = New-eSPJSONLDefinition -Table REG -InterfaceId REG00 -DoNotSubmit -filename "reg_pk.jsonl" -PKColumnsOnly
+$newDefinition.UploadDownloadDefinition.InterfaceHeaders += New-eSPJSONLInterfaceHeader -Table REG_ACADEMIC -InterfaceId REG00 -DoNotLimitSchoolYear -PKColumnsOnly -HeaderId RA -HeaderOrder 2
+$newDefinition.UploadDownloadDefinition.InterfaceHeaders += New-eSPJSONLInterfaceHeader -Table REG -InterfaceId REG00 -DoNotLimitSchoolYear -HeaderId RGACT -HeaderOrder 3 -filename "reg.jsonl" -AdditionalSQL "CURRENT_STATUS = 'A'"
+Submit-eSPDefinition -Definition $newDefinition
+
+Invoke-espDownloadDefinition -InterfaceID REG00 -Wait
+
+$regPrimaryKeys = Get-eSPFile reg_pk.jsonl -AsObject
+$regAcademicPrimaryKeys = Get-eSPFile reg_academic_pk.jsonl -AsObject
+$regActiveStudents = Get-eSPFile reg.jsonl -AsObject
+````
+
 ## Verifying and Sanitizing your Files
 There are multiple ways of cleaning up the files exported. You get to choose which way is best for you. This can be because eSchool does not escape Return Carriages, Line Feeds, or extra delimiters in fields with a download definition. Using the Delimiter "Q" for quoting fields doesn't help.
 

@@ -2140,11 +2140,11 @@ function New-eSPJSONLDefinition {
     #the first HeaderId will always be the InterfaceId. All others will need to be different.
     $newDefinition.UploadDownloadDefinition.InterfaceHeaders += New-eSPJSONLInterfaceHeader @PSBoundParameters -HeaderId $InterfaceId 
 
-    #this will need to be submitted via the Submit-eSPCreateNewDefinition function.
+    #this will need to be submitted via the Submit-eSPDefinition function.
     if ($DoNotSubmit) {
         return $newDefinition 
     } else {
-        Submit-eSPCreateNewDefinition -Definition $newDefinition
+        Submit-eSPDefinition -Definition $newDefinition
     }
         
 }
@@ -2271,7 +2271,7 @@ function New-eSPJSONLInterfaceHeader {
 
 }
 
-function Submit-eSPCreateNewDefinition {
+function Submit-eSPDefinition {
     <#
     
         .SYNOPSIS
@@ -2282,7 +2282,8 @@ function Submit-eSPCreateNewDefinition {
     
     #>
     Param(
-        [Parameter(Mandatory=$true)][Hashtable]$Definition
+        [Parameter(Mandatory=$true)][Hashtable]$Definition,
+        [Parameter(Mandatory=$false)][Switch]$Force
     )
 
     Assert-eSPSession

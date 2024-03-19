@@ -2144,7 +2144,11 @@ function New-eSPJSONLDefinition {
     if ($DoNotSubmit) {
         return $newDefinition 
     } else {
-        Submit-eSPDefinition -Definition $newDefinition
+        if ($Force) {
+            Submit-eSPDefinition -Definition $newDefinition -Force
+        } else {
+            Submit-eSPDefinition -Definition $newDefinition
+        }
     }
         
 }
@@ -2197,6 +2201,12 @@ function New-eSPJSONLInterfaceHeader {
         $columns = '*'
     } elseif ($PKColumnsOnly) {
         $columns = Get-eSPTablePrimaryKeys -Table $Table
+        #some tables have a no primary keys.
+        if (-Not($columns)) {
+            #default back to everything but the SSN and FMS_EMPL_NUMBER
+            Write-Warning "Table $Table does not contain PRIMARY KEYS. We will use the default columns instead."
+            $columns = Get-eSPTableColumns -Table $Table | Where-Object { @('SSN','FMS_EMPL_NUMBER') -notcontains $PSItem }
+        }
     } else {
         $columns = Get-eSPTableColumns -Table $Table | Where-Object { @('SSN','FMS_EMPL_NUMBER') -notcontains $PSItem }
     }
@@ -2216,13 +2226,22 @@ function New-eSPJSONLInterfaceHeader {
         $sqlTemplate = $sqlTemplate -replace '{{MATCH}}',"ROW_IDENTITY = t.ROW_IDENTITY"
     } else {
         #We need to pull the primary keys for this table to make sure we match exactly.
-        $primaryKeys = Get-eSPTableDefinitions | #table definitions are included in this module.
-            Where-Object -Property tblName -eq "$Table" |
-            Where-Object -Property colIsIdentity -eq 1 | ForEach-Object {
-                "$($PSItem.colName) = t.$($PSItem.colName)"
+        $primaryKeys = Get-eSPTablePrimaryKeys -Table $Table
+        
+        if ($primaryKeys) {
+            $primaryKeysMatch = $primaryKeys | ForEach-Object {
+                "$($PSItem) = t.$($PSItem)"
             }
+        } else {
+            #some tables have no ROW_IDENTIY or PRIMARY KEYS. This is a problem and must be matched on all columns OR a uniquely generated identifying column.
+            Write-Warning "Table $Table does not contain ROW_IDENTITY or PRIMARY KEYS. We will match on all columns instead."
+            $primaryKeysMatch = Get-eSPTableColumns -Table $Table | ForEach-Object {
+                "$($PSItem) = t.$($PSItem)"
+            }
+            
+        }
 
-        $sqlTemplate = $sqlTemplate -replace '{{MATCH}}',"$($primaryKeys -join ' AND ')"
+        $sqlTemplate = $sqlTemplate -replace '{{MATCH}}',"$($primaryKeysMatch -join ' AND ')"
     }
 
     #WHERE
@@ -2293,7 +2312,7 @@ function Submit-eSPDefinition {
     Write-Verbose ($jsonpayload)
 
     if ($Force) {
-        Remove-eSPInterfaceId -InterfaceId "$InterfaceId"
+        Remove-eSPInterfaceId -InterfaceId "$($Definition.UploadDownloadDefinition.InterfaceId)"
     }
 
     $response = Invoke-RestMethod -Uri "$($eSchoolSession.Url)/Utility/SaveUploadDownload" `

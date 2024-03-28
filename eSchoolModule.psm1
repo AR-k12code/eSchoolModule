@@ -1295,7 +1295,8 @@ function New-eSPDefinitionColumn {
         [Parameter(Mandatory=$true)]$TableName,
         [Parameter(Mandatory=$true)]$ColumnName,
         [Parameter(Mandatory=$false)]$FieldLength = 255,
-        [Parameter(Mandatory=$false)]$TableAlias = $null
+        [Parameter(Mandatory=$false)]$TableAlias = $null,
+        [Parameter(Mandatory=$false)]$ColumnOverride = $null
     )
 
     return [ordered]@{
@@ -1321,7 +1322,7 @@ function New-eSPDefinitionColumn {
         "ExternalColumnIn" = $null
         "ExternalColumnOut" = $null
         "Literal" = $null
-        "ColumnOverride" = $null
+        "ColumnOverride" = $ColumnOverride
         "Delete" = $False
         "CanDelete" = $True
         "NewRow" = $True
@@ -2288,7 +2289,8 @@ function New-eSPJSONLInterfaceHeader {
             -FieldId 1 `
             -FieldOrder 1 `
             -ColumnName "CODE" `
-            -FieldLength 9999)
+            -FieldLength 9999 `
+            -ColumnOverride 'j')
     )
 
     return $eSPJSONInterfaceHeader

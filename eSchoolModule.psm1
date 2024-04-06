@@ -2132,7 +2132,7 @@ function New-eSPJSONLDefinition {
         [Parameter(Mandatory=$true)][ValidateScript( { ($PSitem.Length) -eq 5} )]$InterfaceId,
         [Parameter(Mandatory=$false)][String]$filename, #If you want to specify the filename, otherwise it will be the InterfaceId since its a 1:1 definition/file.
         [Parameter(Mandatory=$false)][String]$AdditionalSQL = $null, #additional SQL
-        [Parameter(Mandatory=$false)][Switch]$DoNotLimitSchoolYear, #otherwise all queries are limited to the current school year if the table has the SCHOOL_YEAR in it.
+        [Parameter(Mandatory=$false)][Switch]$DoNotLimitSchoolYear, #otherwise all queries are limited to the current school year if the table has the SCHOOL_YEAR OR SECTION_KEY in it.
         [Parameter(Mandatory=$false)]$Delimiter = ',', #Does not matter here since this returns a single column.
         [Parameter(Mandatory=$false)]$Description = "eSchoolModule JSONL Definition",
         [Parameter(Mandatory=$false)]$FilePrefix = '', #Make all files start with this. Something like "GUARD_"
@@ -2182,6 +2182,7 @@ function New-eSPJSONLInterfaceHeader {
 
     #Import-CSV ".\resources\eSchool Tables with SCHOOL_YEAR.csv" | Select-Object -ExpandProperty tblName
     $tables_with_years = Get-eSPTablesWithYears
+    $tables_with_sectionkey = Get-eSPTablesWithSectionKey
 
     if (-Not($filename)) {
         $filename = "$($InterfaceId).jsonl"
@@ -2255,6 +2256,11 @@ function New-eSPJSONLInterfaceHeader {
     #Default Limit to Current School Year. This leaves the {{WHERE}} in the SQL template so we can replace it later.
     if (-Not($DoNotLimitSchoolYear) -and ($tables_with_years -contains $Table)) {
         $sqlTemplate = $sqlTemplate -replace '{{WHERE}}'," AND SCHOOL_YEAR = (SELECT CASE WHEN MONTH(GetDate()) > 6 THEN YEAR(GetDate()) + 1 ELSE YEAR(GetDate()) END) {{WHERE}}"
+    }
+
+    #Default Limit to Current School Year SECTION_KEYs. This leaves the {{WHERE}} in the SQL template so we can replace it later.
+    if (-Not($DoNotLimitSchoolYear) -and ($tables_with_sectionkey -contains $Table)) {
+        $sqlTemplate = $sqlTemplate -replace '{{WHERE}}'," AND SECTION_KEY IN (SELECT SECTION_KEY FROM SCHD_MS WHERE SCHOOL_YEAR = (SELECT CASE WHEN MONTH(GETDATE()) > 6 THEN YEAR(DATEADD(YEAR,1,GETDATE())) ELSE YEAR(GETDATE()) END)) "
     }
 
     if ($AdditionalSQL) {
@@ -2406,6 +2412,21 @@ function Get-eSPTablesWithYears {
         Select-Object -ExpandProperty tblName
         )
 }
+
+function Get-eSPTablesWithSectionKey {
+
+    <#
+    
+        .SYNOPSIS
+        Return an array of tables with the SECTION_KEY property.
+    
+    #>
+    return (Get-eSPTableDefinitions | 
+        Where-Object -Property colName -EQ "SECTION_KEY" |
+        Select-Object -ExpandProperty tblName
+        )
+}
+
 
 function Get-eSPTablePrimaryKeys {
     <#

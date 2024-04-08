@@ -348,7 +348,13 @@ function Get-eSPFileList {
         -Uri "$($eschoolSession.Url)/Task/TaskAndReportData?includeTaskCount=true&includeReports=true&maximumNumberOfReports=-1&includeTasks=false&runningTasksOnly=false" `
         -WebSession $eschoolSession.Session | 
         Select-Object -ExpandProperty Reports |
-        Select-Object -Property DisplayName,RawFileName,FileExtension,@{ Name = 'ModifiedDate'; Expression = { (Get-Date "$($PSitem.ModifiedDate)") }},ReportSize,ReportPath |
+        Select-Object -Property DisplayName,
+            RawFileName,
+            FileExtension,
+            @{ Name = 'ModifiedDate'; Expression = { (Get-Date "$($PSitem.ModifiedDate)") }},
+            ReportSize,
+            @{ Name = 'FileSize'; Expression = { ConvertTo-FileSizeString $PSitem.ReportSize } },
+            ReportPath |
         Sort-Object -Property ModifiedDate -Descending
 
     return $reports
@@ -1369,6 +1375,7 @@ function New-eSPBulkDownloadDefinition {
 
     #Import-CSV ".\resources\eSchool Tables with SCHOOL_YEAR.csv" | Select-Object -ExpandProperty tblName
     $tables_with_years = Get-eSPTablesWithYears
+    $tables_with_sectionkey = Get-eSPTablesWithSectionKey
 
     $newDefinition = New-espDefinitionTemplate -InterfaceId "$InterfaceId" -Description "$Description"
     
@@ -1385,6 +1392,15 @@ function New-eSPBulkDownloadDefinition {
                 $sql_table += " AND SCHOOL_YEAR = (SELECT CASE WHEN MONTH(GetDate()) > 6 THEN YEAR(GetDate()) + 1 ELSE YEAR(GetDate()) END)"
             } else {
                 $sql_table = "$($sql_table) WHERE SCHOOL_YEAR = (SELECT CASE WHEN MONTH(GetDate()) > 6 THEN YEAR(GetDate()) + 1 ELSE YEAR(GetDate()) END)"
+            }
+        }
+
+            #Default Limit to Current School Year SECTION_KEYs. This leaves the {{WHERE}} in the SQL template so we can replace it later.
+        if (-Not($DoNotLimitSchoolYear) -and ($tables_with_sectionkey -contains $Table)) {
+            if ($sqlspecified) {
+                $sql_table += " AND SECTION_KEY IN (SELECT SECTION_KEY FROM SCHD_MS WHERE SCHOOL_YEAR = (SELECT CASE WHEN MONTH(GETDATE()) > 6 THEN YEAR(DATEADD(YEAR,1,GETDATE())) ELSE YEAR(GETDATE()) END)) "
+            } else {
+                $sql_table = "$($sql_table) WHERE SECTION_KEY IN (SELECT SECTION_KEY FROM SCHD_MS WHERE SCHOOL_YEAR = (SELECT CASE WHEN MONTH(GETDATE()) > 6 THEN YEAR(DATEADD(YEAR,1,GETDATE())) ELSE YEAR(GETDATE()) END)) "
             }
         }
 
@@ -19364,3 +19380,40 @@ WSSecAuthenticationLogTbl,FailedDesc,0
 
 return $espDatabase | ConvertFrom-Csv
 }
+
+function ConvertTo-FileSizeString {
+    <#
+    
+    .LINK
+    Author: Lee Dailey
+    https://pastebin.com/s8mH5gdP
+    
+    #>
+    [CmdletBinding()]
+    Param
+        (
+        [Parameter (
+            Position = 0,
+            Mandatory)]
+            [int64]
+            $Size
+        )
+    
+    switch ($Size)
+        {
+        {$_ -gt 1TB} 
+            {[string]::Format("{0:0.00} TB", $Size / 1TB); break}
+        {$_ -gt 1GB} 
+            {[string]::Format("{0:0.00} GB", $Size / 1GB); break}
+        {$_ -gt 1MB} 
+            {[string]::Format("{0:0.00} MB", $Size / 1MB); break}
+        {$_ -gt 1KB} 
+            {[string]::Format("{0:0.00} KB", $Size / 1KB); break}
+        {$_ -gt 0}
+            {[string]::Format("{0} B", $Size); break}
+        {$_ -eq 0}
+            {"0 KB"; break}
+        default  
+            {"0 KB"}
+        }
+    } # end >> function Format-FileSizeString

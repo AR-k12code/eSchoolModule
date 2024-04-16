@@ -2276,7 +2276,7 @@ function New-eSPJSONLInterfaceHeader {
 
     #Default Limit to Current School Year SECTION_KEYs. This leaves the {{WHERE}} in the SQL template so we can replace it later.
     if (-Not($DoNotLimitSchoolYear) -and ($tables_with_sectionkey -contains $Table)) {
-        $sqlTemplate = $sqlTemplate -replace '{{WHERE}}'," AND SECTION_KEY IN (SELECT SECTION_KEY FROM SCHD_MS WHERE SCHOOL_YEAR = (SELECT CASE WHEN MONTH(GETDATE()) > 6 THEN YEAR(DATEADD(YEAR,1,GETDATE())) ELSE YEAR(GETDATE()) END)) "
+        $sqlTemplate = $sqlTemplate -replace '{{WHERE}}'," AND SECTION_KEY IN (SELECT SECTION_KEY FROM SCHD_MS WHERE SCHOOL_YEAR = (SELECT CASE WHEN MONTH(GETDATE()) > 6 THEN YEAR(DATEADD(YEAR,1,GETDATE())) ELSE YEAR(GETDATE()) END)) {{WHERE}}"
     }
 
     if ($AdditionalSQL) {

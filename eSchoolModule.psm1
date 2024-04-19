@@ -212,7 +212,7 @@ function Connect-ToeSchool {
     $response = Invoke-WebRequest `
         -Uri "$($baseUrl)/Account/LogOn" `
         -SessionVariable eSchoolSession `
-        -TimeoutSec 5
+        -TimeoutSec 10
 
     #Login
     $params = @{
@@ -226,7 +226,7 @@ function Connect-ToeSchool {
         -WebSession $eSchoolSession `
         -Method POST `
         -Body $params `
-        -TimeoutSec 5
+        -TimeoutSec 10
 
     # if (($response2.ParsedHtml.title -eq "Login") -or ($response2.StatusCode -ne 200)) {
     #     Write-Error "Failed to login."
@@ -275,7 +275,7 @@ function Connect-ToeSchool {
         -Method POST `
         -Body $params2 `
         -ContentType "application/x-www-form-urlencoded" `
-        -TimeoutSec 5
+        -TimeoutSec 10
 
     #verify we set the environment/selected a valid district.
     try {
@@ -284,7 +284,7 @@ function Connect-ToeSchool {
             -Uri "$($baseUrl)/Task/TaskAndReportData?includeTaskCount=false&includeReports=false&maximumNumberOfReports=1&includeTasks=false&runningTasksOnly=false" `
             -WebSession $eSchoolSession `
             -MaximumRedirection 0 `
-            -TimeoutSec 5
+            -TimeoutSec 10
 
         Write-Host "Connected to eSchool Server $($fields.'ServerName'.value)" -ForegroundColor Green
         $global:eSchoolSession = @{

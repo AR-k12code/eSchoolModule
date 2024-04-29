@@ -2360,7 +2360,7 @@ function Submit-eSPDefinition {
             'Message' = $($response.ValidationErrorMessages)
         }
     } elseif ($response.PageState -eq 2) {
-        Write-Host "Download definition created successfully. You can review it here: $($eSchoolSession.Url)/Utility/UploadDownload?interfaceId=$($InterfaceId)" -ForegroundColor Green
+        Write-Host "Download definition created successfully. You can review it here: $($eSchoolSession.Url)/Utility/UploadDownload?interfaceId=$($Definition.UploadDownloadDefinition.InterfaceId)" -ForegroundColor Green
 
         Connect-ToeSchool #Must reauthenticate.
 

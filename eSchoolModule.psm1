@@ -19490,6 +19490,10 @@ function Remove-eSPFile {
         -ContentType "application/json; charset=UTF-8" `
         -Body "{`"reportsToDelete`":[`"$($FileName)`"],`"tasksToDelete`":[]}"
 
-    return $response
+    #no useful information returned.
+    #return $response
+
+    #you must reauth to run any additional download definitions.
+    Connect-ToeSchool
 
 }

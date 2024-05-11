@@ -577,6 +577,7 @@ function Invoke-eSPDownloadDefinition {
         -Method POST `
         -Body $params
 
+    # No details are returned besides PageState = 2 for success.
     if ($response.PageState -eq 2) {
         Write-Host "Successfully started $InterfaceID download definition."
 
@@ -19417,3 +19418,78 @@ function ConvertTo-FileSizeString {
             {"0 KB"}
         }
     } # end >> function Format-FileSizeString
+
+function Get-eSPTaskList {
+    <#
+
+    .SYNOPSIS
+    Return list of currently running or scheduled tasks.
+
+    #>
+
+    Param(
+        [Parameter(Mandatory = $false)][Switch]$ActiveTasksOnly,
+        [Parameter(Mandatory = $false)][Switch]$ErrorsOnly,
+        [Parameter(Mandatory = $false)][Switch]$SilentErrors
+    )
+
+    Assert-eSPSession
+
+    $tasks = Invoke-RestMethod `
+        -Uri "$($eschoolSession.Url)/Task/TaskAndReportData?includeTaskCount=true&includeReports=false&maximumNumberOfReports=-1&includeTasks=true&runningTasksOnly=false" `
+        -WebSession $eschoolSession.Session | 
+        Select-Object -Property RunningTaskCount,ActiveTasks,InactiveTasks
+
+    $erroredTasks = $tasks.ActiveTasks | Where-Object { $PSItem.ErrorOccurred -eq 'True' }
+
+    #Return errored reports.
+    if ($ErrorsOnly) {
+        return $erroredTasks
+    } elseif (-Not($SilentErrors)) {
+        if ($erroredTasks) {
+           #print to terminal
+            Write-Warning "You have failed tasks in your task list."
+            Write-Warning ($erroredTasks | 
+                Select-Object -Property TaskKey,TaskName,ProgressDescription,ErrorOccurred,RunTime,@{ Name = "TaskError"; Expression = { $PSItem.TaskError.ScheduledTaskErrorDescription } } | 
+                Format-Table | Out-String)
+        }
+    }
+
+    if ($ActiveTasksOnly) {
+        if ($tasks.RunningTaskCount -eq 0) {
+            Write-Warning "No currently running tasks."
+            return $null
+        } else {
+            return ($tasks | 
+                Select-Object -ExpandProperty ActiveTasks | 
+                Where-Object { $PSItem.ErrorOccurred -ne 'True' })
+        }
+    }
+
+    return $tasks
+
+}
+
+function Remove-eSPFile {
+    <#
+
+    .SYNOPSIS
+    Delete a file from eSchool
+
+    #>
+
+    Param(
+        [Parameter(Mandatory = $true,Position = 0)][String]$FileName
+    )
+
+    Assert-eSPSession
+
+    $response = Invoke-RestMethod -Uri "$($eschoolSession.Url)/Task/DeleteTasksAndReports" `
+        -Method "POST" `
+        -WebSession $eschoolSession.Session `
+        -ContentType "application/json; charset=UTF-8" `
+        -Body "{`"reportsToDelete`":[`"$($FileName)`"],`"tasksToDelete`":[]}"
+
+    return $response
+
+}

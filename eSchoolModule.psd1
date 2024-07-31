@@ -10,7 +10,7 @@
     RootModule = 'eSchoolModule.psm1'
     
     # Version number of this module.
-    ModuleVersion = '24.5.11'
+    ModuleVersion = '24.7.31'
     
     # ID used to uniquely identify this module
     GUID = 'b9c99138-35f7-4095-a9e1-5ea07297c903'

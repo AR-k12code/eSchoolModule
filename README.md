@@ -155,6 +155,7 @@ Built in download definitions will start with ESMD and upload defintions will st
 - ESMU5 - "eSchoolModule - Upload HAC Usernames for Contact ID" - Fix usernames for HAC. This does not fix passwords or generate Access Codes.
 - ESMU6 - "eSchoolModule - Upload Attendance" - Push attendance from 3rd party programs back into eSchool. You must be able to match the period name.
 - ESMU7 - "eSchoolModule - Upload Meal Status" - Upload Meal Status from Cafeteria Softare.
+- ESMU8 - "eSchoolModule - Upload Meal Status 2" - Upload Meal Status from Cafeteria Softare.
 
 ## Definition Creator
 Think Bigger!

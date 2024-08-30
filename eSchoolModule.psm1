@@ -656,6 +656,9 @@ function Invoke-eSPUploadDefinition {
         [Parameter(Mandatory=$false)][Switch]$DoNotUpdateExistingRecords, #Do you want the upload definition to update existing records?
         [Parameter(Mandatory=$false)][Switch]$InsertNewRecords, #Do you want the upload definition to insert new records?
         [Parameter(Mandatory=$false)][Switch]$UpdateBlankRecords, #Do you want the upload definition to update blank records?
+        [Parameter(Mandatory=$false)][switch]$ProgramEndDatePriorToStartDate, #this will close the last vector date to the day before the start date.
+        [Parameter(Mandatory=$false)]$ProgramStartDateColumn, #for the ESMU8 its 3.
+        [Parameter(Mandatory=$false)][Switch]$ProgramStartDateData,
         [Parameter(Mandatory=$false)][Switch]$Wait #wait until the scheduled task is complete or errored.
     )
 
@@ -705,6 +708,40 @@ function Invoke-eSPUploadDefinition {
         'ProgramEndDate' = ''
         'GridEndDateData' = @{}
         'GridStartDateData' = @{}
+    }
+
+    if ($ProgramEndDatePriorToStartDate) {
+
+        $params.ProgramDatesEnabled = 'Y'
+        $params.ProgramStartDate = 'FSD'
+        $params.ProgramEndDate = 'PSD'
+        $params.StudWithoutOpenProg = 'USD'
+
+        $params.GridEndDateData = @(
+            @{
+                Header = "1    -Meal Status Upload"
+                DateField = "1"
+                promptName = "PROGRAM_END_DATE_FIELD_1"
+                value = "1"
+            }
+        )
+    }
+
+    if ($ProgramStartDateColumn) {
+
+        $params.ProgramDatesEnabled = 'Y'
+        $params.ProgramStartDate = 'FSD'
+        $params.ProgramEndDate = 'PSD'
+        $params.StudWithoutOpenProg = 'USD'
+
+        $params.GridStartDateData = @(
+            @{
+                Header = "1    -Meal Status Upload"
+                DateField = "$ProgramStartDateColumn"
+                promptName = "PROGRAM_START_DATE_FIELD_1"
+                value = "$ProgramStartDateColumn"
+            }
+        )
     }
 
     $jsonPayload = $params | ConvertTo-Json -Depth 3
@@ -2130,7 +2167,7 @@ function New-eSPMealStatusDefinitions {
         -InterfaceId "ESMU8" `
         -HeaderId 1 `
         -HeaderOrder 1 `
-        -FileName "meal_status_upload.csv" `
+        -FileName "meal_status_upload_changes.csv" `
         -TableName "reg_personal" `
         -Description "Meal Status Upload"
 
@@ -2152,6 +2189,9 @@ function New-eSPMealStatusDefinitions {
     $newDefinition.UploadDownloadDefinition.InterfaceHeaders[0].InterfaceDetails = $columns
 
     New-eSPDefinition -Definition $newDefinition
+
+    #Create the ESMD3 definition for the REG_ENTRY_WITH table to get the last 2 years. Filename will be 2YR_REG_ENTRY_WITH.csv
+    New-eSPBulkDownloadDefinition -Tables REG_ENTRY_WITH -InterfaceId "ESMD3" -Description "eSchoolModule - REG_ENTRY_WITH" -AdditionalSQL "WHERE SCHOOL_YEAR > DATEPART(year,DATEADD(year, -2, GETDATE()))" -FilePrefix '2YR_' -DoNotLimitSchoolYear -Force
 
 }
 

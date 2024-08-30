@@ -140,11 +140,13 @@ Built in download definitions will start with ESMD and upload defintions will st
 - New-eSPGuardianDefinitions (ESMD1,ESMU2,ESMU3,ESMU4)
 - New-eSPHACUploadDefinition (ESMU5)
 - New-eSPAttUploadDefinitions (ESMU6)
+- New-New-eSPMealStatusDefinitions (ESMD2,ESMD3,ESMU7,ESMU8)
 
 ### Download Definitions
 - ESMD0 - "eSchoolModule - Email Download Definition" - Download Contact_id,Student_id, and Email. Then you can process to fix them.
 - ESMD1 - "eSchoolModule - Guardian Duplication" - Download all the information needed to dedupe guardian contacts.
 - ESMD2 - "eSchoolModule - Meal Status" - Download the last 2 years of meal status data for active students.
+- ESMD2 - "eSchoolModule - Reg Entry Withdrawl" - Download the last 2 years of REG_ENTRY_WITH data.
 
 ### Upload Definitions
 - ESMU0 - "eSchoolModule - Email Upload Definition" - Upload Student Emails by Contact_id,Email
@@ -154,8 +156,8 @@ Built in download definitions will start with ESMD and upload defintions will st
 - ESMU4 - "eSchoolModule - Merge Duplicate Guardian Phone Numbers" - Because we don't want lost data.
 - ESMU5 - "eSchoolModule - Upload HAC Usernames for Contact ID" - Fix usernames for HAC. This does not fix passwords or generate Access Codes.
 - ESMU6 - "eSchoolModule - Upload Attendance" - Push attendance from 3rd party programs back into eSchool. You must be able to match the period name.
-- ESMU7 - "eSchoolModule - Upload Meal Status" - Upload Meal Status from Cafeteria Softare.
-- ESMU8 - "eSchoolModule - Upload Meal Status 2" - Upload Meal Status from Cafeteria Softare.
+- ESMU7 - "eSchoolModule - Upload Meal Status" - Upload Meal Status from Cafeteria Softare. (Required for updating existing Meal Statuses and inserting new.)
+- ESMU8 - "eSchoolModule - Upload Meal Status 2" - Upload Meal Status from Cafeteria Softare. (Required for closing priort vector dates and inserting new. Does not update existing.)
 
 ## Definition Creator
 Think Bigger!

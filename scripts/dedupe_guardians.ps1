@@ -13,7 +13,8 @@ Param(
     [Parameter(Mandatory=$false)][switch]$AllowBlankEmail,
     [Parameter(Mandatory=$false)][string]$EmailAddress, #specify guardian email address to dedupe.
     [Parameter(Mandatory=$false)][ValidateSet("G","O","C")][string]$GuardianType = 'G',
-    [Parameter(Mandatory=$false)][switch]$SkipRunningDownloadDefinition
+    [Parameter(Mandatory=$false)][switch]$SkipRunningDownloadDefinition,
+    [Parameter(Mandatory=$false)][ValidateSet("R","V")][string]$RunMode = 'V'
 )
 
 #CSVKit Requirement
@@ -266,17 +267,17 @@ $guardianDuplicatesByEmail | ForEach-Object {
 if ($MoveGuardiansTo99) {
     $MoveGuardiansTo99 | ConvertTo-Csv -UseQuotes AsNeeded | Select-Object -Skip 1 | Out-File .\duplicate_guardians_to_99.csv -Force
     Submit-eSPFile duplicate_guardians_to_99.csv
-    Invoke-eSPUploadDefinition -InterfaceID ESMU2 -RunMode V -Wait #Guardian to 99
+    Invoke-eSPUploadDefinition -InterfaceID ESMU2 -RunMode $RunMode -Wait #Guardian to 99
 } 
 
 if ($primaryGuardianToReplaceSecondary) {
     $primaryGuardianToReplaceSecondary | ConvertTo-Csv -UseQuotes AsNeeded | Select-Object -Skip 1 | Out-File .\duplicate_guardians_fix.csv
     Submit-eSPFile duplicate_guardians_fix.csv
-    Invoke-eSPUploadDefinition -InterfaceID ESMU3 -RunMode V -InsertNewRecords -Wait #Connect Primary Guardian where duplicate was.
+    Invoke-eSPUploadDefinition -InterfaceID ESMU3 -RunMode $RunMode -InsertNewRecords -Wait #Connect Primary Guardian where duplicate was.
 }
 
 if ($PhoneNumbersForPrimaryGuardian) {
     $PhoneNumbersForPrimaryGuardian | ConvertTo-Csv -UseQuotes AsNeeded | Select-Object -Skip 1 | Out-File .\duplicate_guardian_phone_numbers.csv
     Submit-eSPFile duplicate_guardian_phone_numbers.csv
-    Invoke-eSPUploadDefinition -InterfaceID ESMU4 -RunMode V -InsertNewRecords -Wait #Insert updated or missing phone records from duplicates to primary.    
+    Invoke-eSPUploadDefinition -InterfaceID ESMU4 -RunMode $RunMode -InsertNewRecords -Wait #Insert updated or missing phone records from duplicates to primary.    
 }

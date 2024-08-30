@@ -3,8 +3,8 @@
 
 <#
 
-    .SYNOPSIS
-    This script will upload the correct email addresses to eSchool.
+.SYNOPSIS
+This script will upload the correct email addresses to eSchool.
 
 #>
 

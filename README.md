@@ -6,6 +6,13 @@ The eSchool Powershell Module requires PowerShell 7
 
 Create a dedicated VM running Windows Server 2019 or Windows 10 Pro 1809+ for your automation scripts.
 
+## License
+Commercial use of this module is strictly prohibited unless granted by CAMTech Computer Services, LLC in writing.
+
+Arkansas Public Schools Districts are granted a free use license of this module for their internal purposes. Use by a third party on behalf of a district, financial gain, data analysis, or marketing is prohibited.
+
+(c) CAMTech Computer Services, LLC. All rights reserved.
+
 ## Requirements
 Git ````https://git-scm.com/download/win````
 

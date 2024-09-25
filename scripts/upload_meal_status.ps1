@@ -122,6 +122,9 @@ if (Test-Path "esp_meal_status.csv") {
 #import CSV
 if (Test-Path "2YR_REG_ENTRY_WITH.csv") {
 
+    #we should clean this file first of bad line returns.
+    (Get-Content "2YR_REG_ENTRY_WITH.csv" -Raw) -replace "`r",'' -replace "`n",'' -replace '#!#',"#!#`r`n" | Set-Content 2YR_REG_ENTRY_WITH.csv -Force
+
     $regEntryDate = @{}
     
     Import-Csv "2YR_REG_ENTRY_WITH.csv" |

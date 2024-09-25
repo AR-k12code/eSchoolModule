@@ -26,6 +26,11 @@ STUDENT_ID,MEAL_STATUS,START_DATE
 403005967,3,9/19/2023
 403005968,Free,2023/9/19
 
+This script still isn't perfect. We have students with entry dates that do not match a program date. This means that although
+the upload will attempt to use the latest reg entry withdraw date it may not match an existing record. It will however go
+ahead and close out whatever the last vector date is and create a new one with the new status. This means things can be off by a few days
+but at least we won't have the update outright rejected due to conflicting dates.
+
 #>
 
 Param(

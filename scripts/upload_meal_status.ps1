@@ -1,16 +1,15 @@
 <#
 
 .SYNOPSIS
-Upload Meal Status to eSchool 2 - Warning! This script come without warranty of any kind.
+Upload Meal Status to eSchool - Warning! This script come without warranty of any kind.
 Use it at your own risk. I assume no liability for the accuracy, correctness, completeness,
 or usefulness of any information provided by this site nor for any sort of damages using
 these scripts may cause.
 
-
 .DESCRIPTION
 Author: Craig Millsap/CAMTech Computer Services, LLC.
 Date: 8/8/2024
-Updated: 8/30/2024
+Updated: 9/25/2024
 
 .NOTES
 This script will upload Meal Status to eSchool and close out any existing Meal Status that is not in the incoming file.
@@ -18,15 +17,14 @@ This script will upload Meal Status to eSchool and close out any existing Meal S
 This process requires a multiple step process.
 
 1. We have to download existing Meal Status & Entry Withdrawl so we can set an End Date.
-2. We have to upload the new Meal Status.
+2. We have to upload the changes to the REG_PROGRAMS to reflect entry date Meal Status.
+3. We have to upload the other changes so that vector dates can be closed and new ones created. This also updates REG_PERSONAL.
 
 The required CSV to this file should be in the following format (or you can specify the column names with parameters):
 STUDENT_ID,MEAL_STATUS,START_DATE
 403005966,1,9/19/2023
 403005967,3,9/19/2023
 403005968,Free,2023/9/19
-
-We will then upload to eSchool and using the ESMU7 & ESMU8 definitions as needed.
 
 #>
 
@@ -196,51 +194,44 @@ $incomingCSV | ForEach-Object {
     }
     
     #Meal Status Code doesn't match and EXISTING meal status code. Lets check the dates.
-    #if the date is unspecified then we should update the student in eSchool with the current enrollment date.
-    #Its possible for a student to not have an existing meal status. In that case its a new record and needs to use skip this step since it would be a new record.
+
+    # If the start date is not specified we shouldn't take an action here at all.
+    # This should be considered an exception until a real date is provided by the Meal Application.
     if ($start_date -eq '' -and $null -ne $existingLatestMealStatus.($student_id)) {
-
         Write-Error "$($student_id): Different meal code provided but an empty start date provided."
-        # return
-
-        Write-Warning "$($student_id): Meal Status date is unspecified. Using enrollment date."
-        $start_date = $regEntryDate.($student_id).ToShortDateString()
-
-        $UpdateExistingMealStatus += [PSCustomObject]@{
-            STUDENT_ID = $student_id
-            PROGRAM_ID = 'ARSES'
-            PROGRAM_VALUE = ([string]$meal_status).PadLeft(2,'0')
-            FIELD_NUMBER = 1
-            START_DATE = $start_date
-            END_DATE = ''
-            SUMMER_SCHOOL = 'N'
-            PROGRAM_OVERRIDE = 'N'
-        }
-
         return
     }
 
-    #need to change but the change is happening before enrollment date or the same day. We need to update an existing record.
-    #its possible that the incoming file doesn't have a start date
+    # If the Meal Application Date is before the enrollment date then we need to update the existing record on REG_PROGRAMS.
+    # The problem is that the ESMU7 definition does not update the REG_PERSONAL table. We have to make the system run ESMU8 to close
+    # the ESMU7 date and create a new one for the next day using ESMU8. The values will be the same but at least the data will be correct from day #1.
     if ($start_date -ne '' -and (Get-Date "$start_date") -le $regEntryDate.($student_id)) {
         Write-Warning "$($student_id): Meal Status date is before the enrollment date. Using enrollment date."
-        $start_date = $regEntryDate.($student_id).ToShortDateString()
 
         $UpdateExistingMealStatus += [PSCustomObject]@{
             STUDENT_ID = $student_id
             PROGRAM_ID = 'ARSES'
             PROGRAM_VALUE = ([string]$meal_status).PadLeft(2,'0')
             FIELD_NUMBER = 1
-            START_DATE = $start_date
+            START_DATE = $regEntryDate.($student_id).ToShortDateString()
             END_DATE = ''
             SUMMER_SCHOOL = 'N'
             PROGRAM_OVERRIDE = 'N'
         }
 
+        #if a date prior to enrollment date is used the ESMU7 definition does not update the REG_PERSONAL table. We have to make the system run ESMU8 to close
+        # the ESMU7 date and create a new one for the next day. They both will be the same but at least the data will be correct from day #1.
+        $ChangeMealStatus += [PSCustomObject]@{
+            STUDENT_ID = $student_id
+            PROGRAM_VALUE = ([string]$meal_status).PadLeft(2,'0')
+            #If a student doesn't have an existing program date we have to account for that and use their entry date.
+            START_DATE = ($regEntryDate.($student_id)).AddDays(1).ToShortDateString()
+        }
+
         return
     }
 
-    #This must be a new record.
+    # This is a change in meal status and the date is after the enrollment date. We can create a new vector date using ESM8.
     $ChangeMealStatus += [PSCustomObject]@{
         STUDENT_ID = $student_id
         PROGRAM_VALUE = ([string]$meal_status).PadLeft(2,'0')
@@ -279,4 +270,4 @@ if ($ChangeMealStatus) {
 }
 
 Write-Warning "You should run this Cognos Report to review any issues with Meal Status dates:"
-Write-Warning 'Get-CognosReport -report "APSCN Invalid Program Dates" -cognosfolder "_Shared Data File Reports\eSchool Data Cleanup Reports" -reportparams "p_year=2024" -TeamContent | Where-Object -Property "Program Name" -eq "Meal Status" | Format-Table'
+Write-Warning "Get-CognosReport -report 'APSCN Invalid Program Dates' -cognosfolder '_Shared Data File Reports\eSchool Data Cleanup Reports' -reportparams 'p_year=$($schoolYear+1)' -TeamContent | Where-Object -Property 'Program Name' -eq 'Meal Status' | Format-Table"

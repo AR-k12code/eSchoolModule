@@ -2124,8 +2124,30 @@ function New-eSPMealStatusDefinitions {
         $index++
     }
 
-    New-eSPDefinition -Definition $newDefinition
+    #we need REG_PERSONAL for the MEAL_STATUS column.
+    $newDefinition.UploadDownloadDefinition.InterfaceHeaders += New-eSPInterfaceHeader `
+        -InterfaceId "ESMD2" `
+        -HeaderId 2 `
+        -HeaderOrder 2 `
+        -FileName "esp_meal_status_reg_personal.csv" `
+        -TableName "reg_personal" `
+        -Description "eSchoolModule - Meal Status" `
+        -AdditionalSQL 'LEFT JOIN REG ON REG_PERSONAL.STUDENT_ID = REG.STUDENT_ID WHERE REG.CURRENT_STATUS = ''A'''
 
+    $index = 1
+    @("STUDENT_ID","MEAL_STATUS") | ForEach-Object {
+        $newDefinition.UploadDownloadDefinition.InterfaceHeaders[1].InterfaceDetails +=	New-eSPDefinitionColumn `
+            -InterfaceId "ESMD2" `
+            -HeaderId 2 `
+            -TableName "reg_personal" `
+            -FieldId $index `
+            -FieldOrder $index `
+            -ColumnName "$PSitem" `
+            -FieldLength 255
+        $index++
+    }
+
+    New-eSPDefinition -Definition $newDefinition
 
     #Upload Definition
     $newDefinition = New-eSPDefinitionTemplate -InterfaceId ESMU7 -Description "eSchoolModule - Upload Meal Status" -DefinitionType Upload
@@ -2160,7 +2182,7 @@ function New-eSPMealStatusDefinitions {
 
     New-eSPDefinition -Definition $newDefinition
 
-    #Upload Definition
+    #Upload Definition - by having the MEAL_STATUS column eSchool will automatically try to do the program/vector dates.
     $newDefinition = New-eSPDefinitionTemplate -InterfaceId ESMU8 -Description "eSchoolModule - Upload Meal Status 2" -DefinitionType Upload
 
     $newDefinition.UploadDownloadDefinition.InterfaceHeaders += New-eSPInterfaceHeader `

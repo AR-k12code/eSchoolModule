@@ -198,7 +198,7 @@ function Connect-ToeSchool {
     }
 
     if ($TrainingSite) {
-        $baseUrl = "https://eschool20.esptrn.k12.ar.us/eSchoolPLUS"
+        $baseUrl = "https://eschool22.esptrn.k12.ar.us/eSchoolPLUS"
     } else {
         $baseUrl = "https://eschool23.esp.k12.ar.us/eSchoolPLUS"
     }
@@ -1012,63 +1012,78 @@ function Get-eSPStudents {
 
 }
 
-function New-eSPDefinition {
-    Param(
-        [Parameter(Mandatory=$true)]$Definition
-    )
+#This should be an alias of Submit-eSPDefinition
+# function New-eSPDefinition {
+#     Param(
+#         [Parameter(Mandatory=$true)]$Definition
+#     )
 
-    $jsonpayload = $Definition | ConvertTo-Json -depth 6
+#     $jsonpayload = $Definition | ConvertTo-Json -depth 6
 
-    Write-Verbose ($jsonpayload)
+#     Write-Verbose ($jsonpayload)
  
-    #attempt to delete existing if its there already
-    Remove-eSPInterfaceId -InterfaceId "$($Definition.UploadDownloadDefinition.InterfaceId)"
+#     #attempt to delete existing if its there already
+#     Remove-eSPInterfaceId -InterfaceId "$($Definition.UploadDownloadDefinition.InterfaceId)"
 
-    $response = Invoke-RestMethod -Uri "$($eSchoolSession.Url)/Utility/SaveUploadDownload" `
-        -WebSession $eSchoolSession.Session `
-        -Method "POST" `
-        -ContentType "application/json; charset=UTF-8" `
-        -Body $jsonpayload -MaximumRedirection 0
+#     $response = Invoke-RestMethod -Uri "$($eSchoolSession.Url)/Utility/SaveUploadDownload" `
+#         -WebSession $eSchoolSession.Session `
+#         -Method "POST" `
+#         -ContentType "application/json; charset=UTF-8" `
+#         -Body $jsonpayload -MaximumRedirection 0
 
-}
+# }
 
 function Remove-eSPInterfaceId {
+    [Alias("Remove-eSPDefinition")]
 
     Param(
-        [Parameter(Mandatory=$true)]$InterfaceID
+        [Parameter(Mandatory=$true)][Alias("name")]$InterfaceID
     )
 
-    #simple way to get the districtId required to submit removal of a definition.
-    $districtId = Invoke-eSPExecuteSearch -SearchType UPLOADDEF | Select-Object -ExpandProperty district -First 1
+    #Find the InterfaceID in eSchool First.
+    $definition = Invoke-eSPExecuteSearch -SearchType UPLOADDEF |
+        Where-Object -Property district -NE 0 |
+        Where-Object -Property interface_id -EQ $InterfaceID
 
-    $params = [ordered]@{
-        SearchType = "UPLOADDEF"
-        Columns = @()
-        Deleted = @(
-            @{ 
-                Keys = @(
-                    @{
-                        Key = "district"
-                        Value = "$districtId"
-                    },
-                    @{
-                        Key = "interface_id"
-                        Value = $InterfaceID
-                    }
-                )
-            }
-        )
-    }
+    if ($definition) {
+        $jsonPayload = [ordered]@{
+            SearchType = "UPLOADDEF"
+            Columns = @()
+            Deleted = @(
+                @{ 
+                    Keys = @(
+                        @{
+                            Key = "district"
+                            Value = $definition.district
+                        },
+                        @{
+                            Key = "interface_id"
+                            Value = $definition.interface_id
+                        }
+                    )
+                }
+            )
+        } | ConvertTo-Json -Depth 6
 
-    $jsonPayload = $params | ConvertTo-Json -Depth 6
-
-    Write-Verbose ($jsonPayload)
+        Write-Verbose ($jsonPayload)
     
-    $response = Invoke-RESTMethod -Uri "$($eSchoolSession.Url)/Search/SaveResults" `
-        -WebSession $eSchoolSession.Session `
-        -Method "POST" `
-        -ContentType "application/json; charset=UTF-8" `
-        -Body $jsonpayload -MaximumRedirection 0
+        $response = Invoke-RESTMethod -Uri "$($eSchoolSession.Url)/Search/SaveResults" `
+            -WebSession $eSchoolSession.Session `
+            -Method "POST" `
+            -ContentType "application/json; charset=UTF-8" `
+            -Body $jsonpayload -MaximumRedirection 0
+
+        if ($response.success -eq $true) {
+            Write-Host "Successfully removed $InterfaceID from eSchool."
+        } else {
+            #throw an exception here.
+            Write-Error "Failed to remove $InterfaceID from eSchool." -ErrorAction Stop
+        }
+
+    } else {
+        #No exception here.
+        Write-Warning "Could not find $InterfaceID in eSchool."
+    }
 
 }
 
@@ -1209,7 +1224,7 @@ function New-eSPSearchPredicate {
         [Parameter(Mandatory=$true)]$TableName,
         [Parameter(Mandatory=$true)]$ColumnName,
         [Parameter(Mandatory=$true)][ValidateSet("Equal","In",'IsNotNull')]$Operator = 'Equal',
-        [Parameter(Mandatory=$true)][ValidateSet("Char","VarChar","Int")]$DataType = "VarChar",
+        [Parameter(Mandatory=$true)][ValidateSet("Char","VarChar","Int","DateTime")]$DataType = "VarChar",
         [Parameter(Mandatory=$true)]$Values
     )
 
@@ -1546,42 +1561,8 @@ function New-eSPBulkDownloadDefinition {
 
     }
 
-    $jsonpayload = $newDefinition | ConvertTo-Json -Depth 99
-
-    Write-Verbose ($jsonpayload)
-
-    if ($Force) {
-        Remove-eSPInterfaceId -InterfaceId "$InterfaceId"
-    }
-
-    $response = Invoke-RestMethod -Uri "$($eSchoolSession.Url)/Utility/SaveUploadDownload" `
-        -WebSession $eSchoolSession.Session `
-        -Method "POST" `
-        -ContentType "application/json; charset=UTF-8" `
-        -Body $jsonpayload `
-        -MaximumRedirection 0
-
-        if ($response.PageState -eq 1) {
-            Write-Error "Download Definition failed. $($response.ValidationErrorMessages)"
-            return [PSCustomObject]@{
-                'Tables' = $table
-                'Success' = $False
-                'Message' = $($response.ValidationErrorMessages)
-            }
-        } elseif ($response.PageState -eq 2) {
-            Write-Host "Download definition created successfully. You can review it here: $($eSchoolSession.Url)/Utility/UploadDownload?interfaceId=$($InterfaceId)" -ForegroundColor Green
-    
-            Connect-ToeSchool #Must reauthenticate.
-    
-            return [PSCustomObject]@{
-                'Tables' = $table
-                'Success' = $True
-                'Message' = $response
-            }
-            
-        } else {
-            throw "Failed."
-        }
+    Write-Verbose ($newDefinition | ConvertTo-Json -Depth 99)
+    Submit-eSPDefinition -Definition $newDefinition -Force
     
 }
 
@@ -1756,18 +1737,9 @@ function New-eSPEmailDefinitions {
 
     $newDefinition.UploadDownloadDefinition.InterfaceHeaders[0].InterfaceDetails = $columns
 
-    $jsonpayload = $newDefinition | ConvertTo-Json -depth 6
-
-    Write-Verbose ($jsonpayload)
+    Write-Verbose ($newDefinition | ConvertTo-Json -Depth 6)
  
-    #attempt to delete existing if its there already
-    Remove-eSPInterfaceId -InterfaceId "ESMD0"
-
-    $response = Invoke-RestMethod -Uri "$($eSchoolSession.Url)/Utility/SaveUploadDownload" `
-        -WebSession $eSchoolSession.Session `
-        -Method "POST" `
-        -ContentType "application/json; charset=UTF-8" `
-        -Body $jsonpayload -MaximumRedirection 0
+    Submit-eSPDefinition -Definition $newDefinition -Force
 
     <#
         Upload Definition
@@ -1797,19 +1769,9 @@ function New-eSPEmailDefinitions {
 
     $newDefinition.UploadDownloadDefinition.InterfaceHeaders[0].InterfaceDetails = $columns
 
-    $jsonpayload = $newDefinition | ConvertTo-Json -depth 6
-
-    Write-Verbose ($jsonpayload)
+    Write-Verbose ($newDefinition | ConvertTo-Json -Depth 6)
  
-    #attempt to delete existing if its there already
-    Remove-eSPInterfaceId -InterfaceId "ESMU0"
-
-    $response2 = Invoke-RestMethod -Uri "$($eSchoolSession.Url)/Utility/SaveUploadDownload" `
-        -WebSession $eSchoolSession.Session `
-        -Method "POST" `
-        -ContentType "application/json; charset=UTF-8" `
-        -Body $jsonpayload -MaximumRedirection 0
-
+    Submit-eSPDefinition -Definition $newDefinition -Force
 
     <#
         Web Access Upload Definition.
@@ -1841,19 +1803,9 @@ function New-eSPEmailDefinitions {
 
     $newDefinition.UploadDownloadDefinition.InterfaceHeaders[0].InterfaceDetails = $columns
     
-    $jsonpayload = $newDefinition | ConvertTo-Json -depth 6
-
-    Write-Verbose ($jsonpayload)
+    Write-Verbose ($newDefinition | ConvertTo-Json -Depth 6)
  
-    #attempt to delete existing if its there already
-    Remove-eSPInterfaceId -InterfaceId "ESMU1"
-
-    $response2 = Invoke-RestMethod -Uri "$($eSchoolSession.Url)/Utility/SaveUploadDownload" `
-        -WebSession $eSchoolSession.Session `
-        -Method "POST" `
-        -ContentType "application/json; charset=UTF-8" `
-        -Body $jsonpayload -MaximumRedirection 0
-
+    Submit-eSPDefinition -Definition $newDefinition -Force
 
 }
 
@@ -1905,7 +1857,8 @@ function New-eSPGuardianDefinitions {
     }
     
     #Upload Existing Contacts in the Place of the Duplicate.
-    New-eSPDefinition -Definition $newDefinition
+    Write-Verbose ($newDefinition | ConvertTo-Json -Depth 6)
+    Submit-eSPDefinition -Definition $newDefinition -Force
 
     $newDefinition = New-eSPDefinitionTemplate `
         -DefinitionType Upload `
@@ -1933,12 +1886,10 @@ function New-eSPGuardianDefinitions {
         $index++
     }
     
-    New-eSPDefinition -Definition $newDefinition
+    Write-Verbose ($newDefinition | ConvertTo-Json -Depth 6)
+    Submit-eSPDefinition -Definition $newDefinition -Force
 
     #Since we are trying to merge records we should also create an upload definition for Phone Numbers.
-    
-    New-eSPDefinition -Definition $newDefinition
-
     $newDefinition = New-eSPDefinitionTemplate `
         -DefinitionType Upload `
         -InterfaceId "ESMU4" `
@@ -1965,7 +1916,8 @@ function New-eSPGuardianDefinitions {
         $index++
     }
     
-    New-eSPDefinition -Definition $newDefinition
+    Write-Verbose ($newDefinition | ConvertTo-Json -Depth 6)
+    Submit-eSPDefinition -Definition $newDefinition -Force
 }
 
 function New-eSPHACUploadDefinition {
@@ -2010,18 +1962,8 @@ function New-eSPHACUploadDefinition {
 
     $newDefinition.UploadDownloadDefinition.InterfaceHeaders[0].InterfaceDetails = $columns
 
-    $jsonpayload = $newDefinition | ConvertTo-Json -depth 6
-
-    Write-Verbose ($jsonpayload)
- 
-    #attempt to delete existing if its there already
-    Remove-eSPInterfaceId -InterfaceId "ESMU5"
-
-    $response2 = Invoke-RestMethod -Uri "$($eSchoolSession.Url)/Utility/SaveUploadDownload" `
-        -WebSession $eSchoolSession.Session `
-        -Method "POST" `
-        -ContentType "application/json; charset=UTF-8" `
-        -Body $jsonpayload -MaximumRedirection 0
+    Write-Verbose ($newDefinition | ConvertTo-Json -Depth 6)
+    Submit-eSPDefinition -Definition $newDefinition -Force
 
 }
 
@@ -2084,7 +2026,8 @@ function New-eSPAttUploadDefinitions {
     }
     
     #Upload Existing Contacts in the Place of the Duplicate.
-    New-eSPDefinition -Definition $newDefinition -Verbose
+    Write-Verbose ($newDefinition | ConvertTo-Json -Depth 6)
+    Submit-eSPDefinition -Definition $newDefinition -Force
 
 }
 
@@ -2147,7 +2090,8 @@ function New-eSPMealStatusDefinitions {
         $index++
     }
 
-    New-eSPDefinition -Definition $newDefinition
+    Write-Verbose ($newDefinition | ConvertTo-Json -Depth 6)
+    Submit-eSPDefinition -Definition $newDefinition -Force
 
     #Upload Definition
     $newDefinition = New-eSPDefinitionTemplate -InterfaceId ESMU7 -Description "eSchoolModule - Upload Meal Status" -DefinitionType Upload
@@ -2160,27 +2104,28 @@ function New-eSPMealStatusDefinitions {
         -TableName "reg_programs" `
         -Description "Meal Status Upload"
 
-        $rows = @(
-            @{ table = "reg_programs"; column = "STUDENT_ID"; length = 10 },
-            @{ table = "reg_programs"; column = "PROGRAM_ID"; length = 5 },
-            @{ table = "reg_programs"; column = "PROGRAM_VALUE"; length = 2 },
-            @{ table = "reg_programs"; column = "FIELD_NUMBER"; length = 1 },
-            @{ table = "reg_programs"; column = "START_DATE"; length = 10 },
-            @{ table = "reg_programs"; column = "END_DATE"; length = 10 },
-            @{ table = "reg_programs"; column = "SUMMER_SCHOOL"; length = 1 },
-            @{ table = "reg_programs"; column = "PROGRAM_OVERRIDE"; length = 1 }
-        )
+    $rows = @(
+        @{ table = "reg_programs"; column = "STUDENT_ID"; length = 10 },
+        @{ table = "reg_programs"; column = "PROGRAM_ID"; length = 5 },
+        @{ table = "reg_programs"; column = "PROGRAM_VALUE"; length = 2 },
+        @{ table = "reg_programs"; column = "FIELD_NUMBER"; length = 1 },
+        @{ table = "reg_programs"; column = "START_DATE"; length = 10 },
+        @{ table = "reg_programs"; column = "END_DATE"; length = 10 },
+        @{ table = "reg_programs"; column = "SUMMER_SCHOOL"; length = 1 },
+        @{ table = "reg_programs"; column = "PROGRAM_OVERRIDE"; length = 1 }
+    )
 
-        $columns = @()
-        $columnNum = 1
-        $rows | ForEach-Object {
-            $columns += New-eSPDefinitionColumn -InterfaceID 'ESMU7' -HeaderID 1 -TableName $($PSitem.table) -FieldId $columnNum -FieldOrder $columnNum -ColumnName $($PSitem.column) -FieldLength $($PSItem.length)
-            $columnNum++
-        }
+    $columns = @()
+    $columnNum = 1
+    $rows | ForEach-Object {
+        $columns += New-eSPDefinitionColumn -InterfaceID 'ESMU7' -HeaderID 1 -TableName $($PSitem.table) -FieldId $columnNum -FieldOrder $columnNum -ColumnName $($PSitem.column) -FieldLength $($PSItem.length)
+        $columnNum++
+    }
 
-        $newDefinition.UploadDownloadDefinition.InterfaceHeaders[0].InterfaceDetails = $columns
+    $newDefinition.UploadDownloadDefinition.InterfaceHeaders[0].InterfaceDetails = $columns
 
-    New-eSPDefinition -Definition $newDefinition
+    Write-Verbose ($newDefinition | ConvertTo-Json -Depth 6)
+    Submit-eSPDefinition -Definition $newDefinition -Force
 
     #Upload Definition - by having the MEAL_STATUS column eSchool will automatically try to do the program/vector dates.
     $newDefinition = New-eSPDefinitionTemplate -InterfaceId ESMU8 -Description "eSchoolModule - Upload Meal Status 2" -DefinitionType Upload
@@ -2210,7 +2155,8 @@ function New-eSPMealStatusDefinitions {
 
     $newDefinition.UploadDownloadDefinition.InterfaceHeaders[0].InterfaceDetails = $columns
 
-    New-eSPDefinition -Definition $newDefinition
+    Write-Verbose ($newDefinition | ConvertTo-Json -Depth 6)
+    Submit-eSPDefinition -Definition $newDefinition -Force
 
     #Create the ESMD3 definition for the REG_ENTRY_WITH table to get the last 2 years. Filename will be 2YR_REG_ENTRY_WITH.csv
     New-eSPBulkDownloadDefinition -Tables REG_ENTRY_WITH -InterfaceId "ESMD3" -Description "eSchoolModule - REG_ENTRY_WITH" -AdditionalSQL "WHERE SCHOOL_YEAR > DATEPART(year,DATEADD(year, -2, GETDATE()))" -FilePrefix '2YR_' -DoNotLimitSchoolYear -Force
@@ -2413,6 +2359,7 @@ function New-eSPJSONLInterfaceHeader {
 }
 
 function Submit-eSPDefinition {
+    [Alias("New-eSPDefinition")]
     <#
     
         .SYNOPSIS
@@ -2445,27 +2392,20 @@ function Submit-eSPDefinition {
         -MaximumRedirection 0 `
         -SkipHttpErrorCheck
 
-    if ($response.PageState -eq 1) {
-        Write-Error "Download Definition failed. $($response.ValidationErrorMessages)"
-        return [PSCustomObject]@{
-            'Tables' = $table
-            'Success' = $False
-            'Message' = $($response.ValidationErrorMessages)
-        }
-    } elseif ($response.PageState -eq 2) {
+    if ($response.PageState -eq 2) {
         Write-Host "Download definition created successfully. You can review it here: $($eSchoolSession.Url)/Utility/UploadDownload?interfaceId=$($Definition.UploadDownloadDefinition.InterfaceId)" -ForegroundColor Green
 
-        Connect-ToeSchool #Must reauthenticate.
+        Assert-eSPSession -Force #Must reauthenticate.
 
         return [PSCustomObject]@{
             'Tables' = $table
             'Success' = $True
             'Message' = $response
         }
-        
     } else {
-        throw "Failed."
+        Write-Error "Download Definition failed. $($response.ValidationErrorMessages)" -ErrorAction Stop
     }
+
 }
 
 function Get-eSPTableNames {
@@ -19586,7 +19526,7 @@ function Remove-eSPFile {
     #return $response
 
     #you must reauth to run any additional download definitions.
-    Connect-ToeSchool
+    Assert-eSPSession -Force
 
 }
 

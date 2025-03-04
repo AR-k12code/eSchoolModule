@@ -495,11 +495,26 @@ function Remove-eSPFile {
 
     Assert-eSPSession
 
-    $response = Invoke-RestMethod -Uri "$($eSchoolSession.Url)/Task/DeleteTasksAndReports" `
-        -Method "POST" `
-        -WebSession $eSchoolSession.session `
-        -ContentType "application/json; charset=UTF-8" `
-        -Body "{`"reportsToDelete`":[`"$($FileName)`"],`"tasksToDelete`":[]}"
+    $params = @{
+        'reportsToDelete' = @($FileName)
+        'tasksToDelete' = @()
+    } | ConvertTo-Json
+
+    try {
+        $response = Invoke-RestMethod -Uri "$($eSchoolSession.Url)/Task/DeleteTasksAndReports" `
+            -Method "POST" `
+            -WebSession $eSchoolSession.session `
+            -ContentType "application/json; charset=UTF-8" `
+            -Body $params
+    } catch {
+        Write-Error "Failed to delete $($FileName). $_" -ErrorAction Stop
+    }
+
+    if ($reponse.Reports | Where-Object -Property RawFileName -eq $FileName) {
+        Write-Error "Failed to delete $FileName." -ErrorAction Stop
+    } else {
+        Write-Host "Successfully deleted $FileName." -ForegroundColor Green
+    }
 
 }
 
@@ -19499,34 +19514,6 @@ function Get-eSPTaskList {
     }
 
     return $tasks
-
-}
-
-function Remove-eSPFile {
-    <#
-
-    .SYNOPSIS
-    Delete a file from eSchool
-
-    #>
-
-    Param(
-        [Parameter(Mandatory = $true,Position = 0)][String]$FileName
-    )
-
-    Assert-eSPSession
-
-    $response = Invoke-RestMethod -Uri "$($eschoolSession.Url)/Task/DeleteTasksAndReports" `
-        -Method "POST" `
-        -WebSession $eschoolSession.Session `
-        -ContentType "application/json; charset=UTF-8" `
-        -Body "{`"reportsToDelete`":[`"$($FileName)`"],`"tasksToDelete`":[]}"
-
-    #no useful information returned.
-    #return $response
-
-    #you must reauth to run any additional download definitions.
-    Assert-eSPSession -Force
 
 }
 

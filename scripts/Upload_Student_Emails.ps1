@@ -63,6 +63,7 @@ try {
 				$records += [PSCustomObject]@{
 					CONTACT_ID = $student.'CONTACT_ID'
 					EMAIL = $adEmailAddress
+					DUMMY = '' #Dummy column for eSchool upload
 				}
 		
 			}

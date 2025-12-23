@@ -48,6 +48,9 @@ You NEED Read/Write to:
 - eSchoolPLUS System > Utilities > RUNLOAD
 - eSchoolPLUS System > Setup And Configuration > LOADDEFS
 
+# MFA Requirements Jan 2026
+You will be required to provide an MFA token from your email. You will be required to create your own function called "Get-eSPMFACode" that returns the 6 digit code from your email. An example of this function will be provided in the scripts\Get-eSPMFACode.ps1 file.
+
 # Tutorial
 Coming Soon
 [![tutorial](/images/youtube_thumbnail.jpg)](https://www.youtube.com/@camtechcs)

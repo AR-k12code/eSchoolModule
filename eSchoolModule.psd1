@@ -10,7 +10,7 @@
     RootModule = 'eSchoolModule.psm1'
     
     # Version number of this module.
-    ModuleVersion = '25.2.21'
+    ModuleVersion = '25.12.22'
     
     # ID used to uniquely identify this module
     GUID = 'b9c99138-35f7-4095-a9e1-5ea07297c903'
@@ -28,7 +28,7 @@
     Description = 'Module for pulling data from the Arkansas eSchool Servers'
     
     # Minimum version of the Windows PowerShell engine required by this module
-    PowerShellVersion = '7.0'
+    PowerShellVersion = '7.4'
     
     # Modules that must be imported into the global environment prior to importing this module
     #RequiredModules = @()

@@ -44,7 +44,7 @@ function Set-eSchoolConfig {
         .EXAMPLE
         Set-eSchoolConfig -Username "0403cmillsap"
         .EXAMPLE
-        Set-eSchoolConfig -ConfigName "Training" -Username "0403training"
+        Set-eSchoolConfig -ConfigName "Training" -Username "0403training" -Training
     #>
 
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingConvertToSecureStringWithPlainText", "")]
@@ -59,7 +59,8 @@ function Set-eSchoolConfig {
                 }
             })]
         [String]$ConfigName = "DefaultConfig",
-        [Parameter(Mandatory = $true)][String]$username
+        [Parameter(Mandatory = $true)][String]$username,
+        [Parameter(Mandatory = $false)][switch]$Training #always use the training site.
     )
 
     #ensure the configuration folder exists under this users local home.
@@ -72,7 +73,8 @@ function Set-eSchoolConfig {
     $config = @{
         ConfigName = $ConfigName
         Username = $username
-        password = $eSchoolPassword
+        Password = $eSchoolPassword
+        Training = $Training ? $true : $false
     }
 
     $configPath = "$($HOME)\.config\eSchool\$($ConfigName).json"
@@ -95,8 +97,8 @@ function Show-eSchoolConfig {
 
         $configList = [System.Collections.Generic.List[PSObject]]@()
         
-        $configs | ForEach-Object { 
-            $config = Get-Content $PSitem.FullName | ConvertFrom-Json | Select-Object -Property ConfigName,username,fileName
+        $configs | ForEach-Object {
+            $config = Get-Content $PSitem.FullName | ConvertFrom-Json | Select-Object -Property ConfigName,Username,Training,FileName
             $config.fileName = $PSitem.FullName
 
             if ($config.ConfigName -ne $PSItem.BaseName) {
@@ -185,7 +187,7 @@ function Connect-ToeSchool {
     Param(
         [Parameter(Mandatory=$false)][String]$ConfigName = "DefaultConfig",
         [Parameter(Mandatory=$false)][Switch]$TrainingSite,
-        [Parameter(Mandatory=$false)][String]$Database
+        [Parameter(Mandatory=$false)][String]$Database #a single account might have access to multiple databases.
     )
 
     if (Test-Path "$($HOME)\.config\eSchool\$($ConfigName).json") {
@@ -197,22 +199,77 @@ function Connect-ToeSchool {
         Write-Error "No Configuration Specified"
     }
 
-    if ($TrainingSite) {
-        $baseUrl = "https://eschool22.esptrn.k12.ar.us/eSchoolPLUS"
-    } else {
-        $baseUrl = "https://eschool23.esp.k12.ar.us/eSchoolPLUS"
-    }
+    Write-Verbose ($config | ConvertTo-Json)
 
-    $username = $config.username
-    $password = (New-Object pscredential "user",($config.password | ConvertTo-SecureString)).GetNetworkCredential().Password
+    $baseUrl = $config.Training ? "https://eschool22.esptrn.k12.ar.us/eSchoolPLUS" : ($TrainingSite.IsPresent ? "https://eschool22.esptrn.k12.ar.us/eSchoolPLUS" : "https://eschool23.esp.k12.ar.us/eSchoolPLUS")
+
+    $username = $config.Username
+    $password = (New-Object pscredential "user",($config.Password | ConvertTo-SecureString)).GetNetworkCredential().Password
     
     Write-Verbose "$($baseUrl)/Account/LogOn"
 
     #Get Verification Token.
-    $response = Invoke-WebRequest `
-        -Uri "$($baseUrl)/Account/LogOn" `
-        -SessionVariable eSchoolSession `
-        -TimeoutSec 10
+    
+    #if cookies have been saved, try to reuse them.
+    if (Test-Path -Path "$HOME\.config\eSchool\$($ConfigName).xml") {
+
+        Remove-Variable -Name eSchoolSession -ErrorAction SilentlyContinue
+        $eSchoolSession = Restore-WebSession -Path "$HOME\.config\eSchool\$($ConfigName).xml"
+        
+        $response = Invoke-WebRequest `
+                -Uri "$($baseUrl)/Account/LogOn" `
+                -WebSession $eSchoolSession `
+                -TimeoutSec 10
+
+        #if the session is still good then we can just check if we can get the files. If so we are done.
+        try {
+
+            $response2 = Invoke-RestMethod `
+                -Uri "$($baseUrl)/Task/TaskAndReportData?includeTaskCount=false&includeReports=false&maximumNumberOfReports=1&includeTasks=false&runningTasksOnly=false" `
+                -WebSession $eSchoolSession `
+                -MaximumRedirection 0 `
+                -TimeoutSec 10 `
+                -ErrorAction Stop
+
+            Save-WebSession -Session $eSchoolSession -Path "$HOME\.config\eSchool\$($ConfigName).xml" -TargetUri $baseUrl
+
+            #get the servername.
+            $response3 = Invoke-WebRequest `
+                -Uri "$($baseUrl)/Account/SetEnvironment?actionDetails=EditEnvironment" `
+                -WebSession $eSchoolSession `
+                -MaximumRedirection 0 `
+                -TimeoutSec 2 `
+                -ErrorAction Stop
+
+            $fields = $response3.InputFields | Group-Object -Property name -AsHashTable
+            Write-Host "Connected to eSchool Server $($fields.'ServerName'.value)" -ForegroundColor Green
+            $global:eSchoolSession = @{
+                Session = $eschoolSession
+                Username = $username
+                Url = $baseUrl
+                Server = $($fields.'ServerName'.value)
+                Params = @{ #used to reestablish session
+                    Database = $Database
+                    ConfigName = $ConfigName
+                    TrainingSite = $config.Training
+                }
+
+            }
+
+            return
+
+        } catch {
+            $response = Invoke-WebRequest `
+                -Uri "$($baseUrl)/Account/LogOn" `
+                -SessionVariable eSchoolSession `
+                -TimeoutSec 10
+        }
+    } else {
+        $response = Invoke-WebRequest `
+            -Uri "$($baseUrl)/Account/LogOn" `
+            -SessionVariable eSchoolSession `
+            -TimeoutSec 10
+    }
 
     #Login
     $params = @{
@@ -277,14 +334,45 @@ function Connect-ToeSchool {
         -ContentType "application/x-www-form-urlencoded" `
         -TimeoutSec 10
 
-    #verify we set the environment/selected a valid district.
     try {
 
+        #This is where I expect to see a MFA code.
+        #If we see the field we need to use Get-eSPMFACode to get the code and submit it. This function will have to exist outside of this module.
+        if ($response3.InputFields.name -contains 'VerificationToken') {
+
+            Write-Host "MFA Required. Attempting to retrieve MFA code from email." -ForegroundColor Yellow
+
+            #MFA Prompt
+            if (Get-Command -Name "Get-eSPMFACode" -ErrorAction SilentlyContinue) {
+                $mfacode = Get-eSPMFACode
+            } else {
+                Write-Warning "Get-eSPMFACode function not found. Please enter the MFA code manually."
+                $mfacode = Read-Host -Prompt "Enter MFA Code"
+            }
+
+            $mfaParams = [ordered]@{
+                    '__RequestVerificationToken' = ($response3.InputFields | Where-Object -Property name -eq '__RequestVerificationToken').value
+                    'DatabaseName' = ($response3.InputFields | Where-Object -Property name -eq 'DatabaseName').value
+                    'VerificationToken' = $mfacode
+                }
+
+            $MFAResponse = Invoke-WebRequest `
+                -Uri "$($baseUrl)/Account/MfaVerification" `
+                -WebSession $eSchoolSession `
+                -Method POST `
+                -Body $mfaParams `
+                -ContentType "application/x-www-form-urlencoded" `
+                -TimeoutSec 10
+        }
+
+        #verify we set the environment/selected a valid district.
         $response4 = Invoke-RestMethod `
             -Uri "$($baseUrl)/Task/TaskAndReportData?includeTaskCount=false&includeReports=false&maximumNumberOfReports=1&includeTasks=false&runningTasksOnly=false" `
             -WebSession $eSchoolSession `
             -MaximumRedirection 0 `
             -TimeoutSec 10
+
+        Save-WebSession -Session $eSchoolSession -Path "$HOME\.config\eSchool\$($ConfigName).xml" -TargetUri $baseUrl
 
         Write-Host "Connected to eSchool Server $($fields.'ServerName'.value)" -ForegroundColor Green
         $global:eSchoolSession = @{
@@ -295,8 +383,9 @@ function Connect-ToeSchool {
             Params = @{ #used to reestablish session
                 Database = $Database
                 ConfigName = $ConfigName
-                TrainingSite = $TrainingSite ? $true : $false
+                TrainingSite = $config.Training
             }
+
         }
     } catch {
         Write-Error "Failed to Set Environment."
@@ -314,23 +403,27 @@ function Assert-eSPSession {
         [Parameter(Mandatory=$false)][Switch]$Force #sometimes we need to reauthenticate. Especially after bulk creation of Download Definitions.
     )
 
-    Try {
-        #attempt to see the task list. If this sends us a redirect then we know the session has expired. Try to authenticate again.
-        #even if this is null it won't fail.
-        $tasks = Invoke-RestMethod -Uri "$($eschoolSession.Url)/Task/TaskAndReportData?includeTaskCount=true&includeReports=false&maximumNumberOfReports=1&includeTasks=true&runningTasksOnly=false" -MaximumRedirection 0 -WebSession $eschoolSession.session
+    if ($Force) {
+        $params = $eschoolSession.Params
+        Connect-ToeSchool @params
+    } else {
+        Try {
+            #attempt to see the task list. If this sends us a redirect then we know the session has expired. Try to authenticate again.
+            #even if this is null it won't fail.
+            $tasks = Invoke-RestMethod -Uri "$($eschoolSession.Url)/Task/TaskAndReportData?includeTaskCount=true&includeReports=false&maximumNumberOfReports=1&includeTasks=true&runningTasksOnly=false" -MaximumRedirection 0 -WebSession $eschoolSession.session
 
-        if ($Force) {
-            $params = $eschoolSession.Params
-            Connect-ToeSchool @params
-        }
-    } catch {
-        if ($eschoolSession) {
-            #session exists but has probably timed out. Reuse parameters.
-            $params = $eschoolSession.Params
-            Connect-ToeSchool @params
-        } else {
-            #new session using default profile.
-            Connect-ToeSchool
+            #we need the latest cookie/session saved to the disk.
+            Save-WebSession -Session $eSchoolSession.Session -Path "$HOME\.config\eSchool\$($eschoolsession.Params.ConfigName).xml" -TargetUri $eschoolsession.Url -Silent
+
+        } catch {
+            if ($eschoolSession) {
+                #session exists but has probably timed out. Reuse parameters.
+                $params = $eschoolSession.Params
+                Connect-ToeSchool @params
+            } else {
+                #new session using default profile.
+                Connect-ToeSchool
+            }
         }
     }
 }
@@ -490,30 +583,40 @@ function Remove-eSPFile {
     #>
 
     Param(
-        [Parameter(Mandatory=$true,Position=0)][String]$FileName
+        [Parameter(Mandatory=$true,Position=0,ValueFromPipelineByPropertyName=$true)][Alias('FileName')][String]$RawFileName
     )
 
-    Assert-eSPSession
-
-    $params = @{
-        'reportsToDelete' = @($FileName)
-        'tasksToDelete' = @()
-    } | ConvertTo-Json
-
-    try {
-        $response = Invoke-RestMethod -Uri "$($eSchoolSession.Url)/Task/DeleteTasksAndReports" `
-            -Method "POST" `
-            -WebSession $eSchoolSession.session `
-            -ContentType "application/json; charset=UTF-8" `
-            -Body $params
-    } catch {
-        Write-Error "Failed to delete $($FileName). $_" -ErrorAction Stop
+    Begin {
+        Assert-eSPSession
+        $files = @()
     }
 
-    if ($reponse.Reports | Where-Object -Property RawFileName -eq $FileName) {
-        Write-Error "Failed to delete $FileName." -ErrorAction Stop
-    } else {
-        Write-Host "Successfully deleted $FileName." -ForegroundColor Green
+    Process {
+        $files += $RawFileName
+    }
+
+    End {
+        $params = @{
+            'reportsToDelete' = $files
+            'tasksToDelete' = @()
+        } | ConvertTo-Json
+
+        try {
+            $response = Invoke-RestMethod -Uri "$($eSchoolSession.Url)/Task/DeleteTasksAndReports" `
+                -Method "POST" `
+                -WebSession $eSchoolSession.session `
+                -ContentType "application/json; charset=UTF-8" `
+                -Body $params
+        } catch {
+            Write-Error "Failed to delete $($files -join ', '). $_" -ErrorAction Stop
+        }
+
+        if ($response.Reports | Where-Object -Property RawFileName -in $files) {
+            Write-Error "Failed to delete $($files -join ', ')." -ErrorAction Stop
+        } else {
+            Write-Host "Successfully deleted $($files -join ', ')." -ForegroundColor Green
+        }
+
     }
 
 }
@@ -2195,6 +2298,7 @@ function New-eSPJSONLDefinition {
     We should really use the PK for the table. This might be multiple fields so this can be complicated and will require the table defintions.
 
     #>
+    [CmdletBinding()]
     Param(
         [Parameter(Mandatory=$true)][String]$Table, #Single Table.
         [Parameter(Mandatory=$false)][String]$Columns, #Comma separated string with no spaces, otherwise it will be the columns for the table (excluding SSN and FMS_EMPL_NUMBER by default.)
@@ -2230,6 +2334,7 @@ function New-eSPJSONLDefinition {
 }
 
 function New-eSPJSONLInterfaceHeader {
+    [CmdletBinding()]
     Param(
         [Parameter(Mandatory=$true)][String]$Table, #Single Table.
         [Parameter(Mandatory=$false)]$Columns, #If you want to specify the columns, otherwise it will be the columns for the table (excluding SSN and FMS_EMPL_NUMBER by default.)
@@ -19779,4 +19884,80 @@ reg_programs-arrs,end_date-1,Residency End Date
 reg_programs-arrs,end_date-2,Send/Receive District LEA End Date
 reg_programs-arrs,end_date-3,Send/Receive Building LEA End Date
 '@
+}
+
+function Save-WebSession {
+    
+    Param (
+        [Parameter(Mandatory=$true)][Microsoft.PowerShell.Commands.WebRequestSession]$Session,
+        [Parameter(Mandatory=$true)][string]$Path,
+        [Parameter(Mandatory=$true)][uri]$TargetUri,
+        [Parameter(Mandatory=$false)][switch]$Silent
+    )
+
+    $cookies = $Session.Cookies.GetCookies($TargetUri)
+
+    $exportObject = [PSCustomObject]@{
+        Cookies   = $cookies
+        Headers   = $Session.Headers
+        UserAgent = $Session.UserAgent
+    }
+
+    $exportObject | Export-Clixml -Path $Path
+    
+    if (-not $Silent) {
+        Write-Host "Session saved to '$Path'" -ForegroundColor Green
+    }
+
+    try {
+        #ensure the file is encrypted
+        $file = Get-Item -Path $Path
+        $file.Encrypt()
+    } catch {}
+}
+
+function Restore-WebSession {
+    
+    Param (
+        [Parameter(Mandatory=$true)][string]$Path
+    )
+
+    if (-not (Test-Path $Path)) {
+        Throw "Could not find session file at $Path"
+    }
+
+    $data = Import-Clixml -Path $Path
+    $newSession = New-Object Microsoft.PowerShell.Commands.WebRequestSession
+
+    $newSession.UserAgent = $data.UserAgent
+    
+    if ($data.Headers) {
+        foreach ($key in $data.Headers.Keys) {
+            $newSession.Headers[$key] = $data.Headers[$key]
+        }
+    }
+
+    if ($data.Cookies) {
+        foreach ($savedCookie in $data.Cookies) {
+            # Create a real .NET Cookie object
+            $realCookie = New-Object System.Net.Cookie
+            
+            # Map the essential properties
+            $realCookie.Name   = $savedCookie.Name
+            $realCookie.Value  = $savedCookie.Value
+            $realCookie.Domain = $savedCookie.Domain
+            $realCookie.Path   = $savedCookie.Path
+            
+            # Map optional properties if they exist
+            if ($savedCookie.Secure)   { $realCookie.Secure   = $savedCookie.Secure }
+            if ($savedCookie.HttpOnly) { $realCookie.HttpOnly = $savedCookie.HttpOnly }
+            if ($savedCookie.Expires)  { $realCookie.Expires  = $savedCookie.Expires }
+
+            # Add to the new session's container
+            $newSession.Cookies.Add($realCookie)
+        }
+    }
+
+    Write-Host "Session restored from '$Path'" -ForegroundColor Green
+    return $newSession
 }

@@ -7,6 +7,8 @@ Retrieves the eSP MFA code sent to the user's email address.
 This function will need to be customized and placed into the users profile.
 You can find your profile path by entering this in to a Powershell 7 terminal: $PROFILE.CurrentUserCurrentHost
 
+BE SURE to rePLACE espmfa@camtechcs.com with your email address!
+
 #>
 
 #Example for Gmail using GAM, GAM must be in your system path.
@@ -81,7 +83,7 @@ function Get-eSPMFACode {
 
     while ($true) {
 
-        $messages = Get-MgUserMessage -UserId "espmfa@camtechcs.com" -Filter "startswith(Subject,'Powerschool') and ReceivedDateTime ge $($startDate.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ"))" -Top 1
+        $messages = Get-MgUserMessage -UserId "espmfa@camtechcs.com" -Filter "startswith(Subject,'Powerschool') and ReceivedDateTime ge $($startTime.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ"))" -Top 1
 
         @($messages.BodyPreview) -match "\d{6}"
 

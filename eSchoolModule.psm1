@@ -187,6 +187,7 @@ function Connect-ToeSchool {
     Param(
         [Parameter(Mandatory=$false)][String]$ConfigName = "DefaultConfig",
         [Parameter(Mandatory=$false)][Switch]$TrainingSite,
+        [Parameter(Mandatory=$false)][Switch]$ManualMFA, #if you need to manually enter the MFA token.
         [Parameter(Mandatory=$false)][String]$Database #a single account might have access to multiple databases.
     )
 
@@ -343,7 +344,7 @@ function Connect-ToeSchool {
             Write-Host "MFA Required. Attempting to retrieve MFA code from email." -ForegroundColor Yellow
 
             #MFA Prompt
-            if (Get-Command -Name "Get-eSPMFACode" -ErrorAction SilentlyContinue) {
+            if ((Get-Command -Name "Get-eSPMFACode" -ErrorAction SilentlyContinue) -and (-Not($ManualMFA))) {
                 $mfacode = Get-eSPMFACode
             } else {
                 Write-Warning "Get-eSPMFACode function not found. Please enter the MFA code manually."
@@ -19901,6 +19902,11 @@ function Save-WebSession {
         Cookies   = $cookies
         Headers   = $Session.Headers
         UserAgent = $Session.UserAgent
+    }
+
+    #ensure the configuration folder exists under this users local home.
+    if (-Not(Test-Path "$($HOME)\.config\eSchool")) {
+        New-Item "$($HOME)\.config\eSchool" -ItemType Directory -Force
     }
 
     $exportObject | Export-Clixml -Path $Path

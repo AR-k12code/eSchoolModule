@@ -14,21 +14,23 @@ BE SURE to rePLACE espmfa@camtechcs.com with your email address!
 #Example for Gmail using GAM, GAM must be in your system path.
 function Get-eSPMFACode {
 
-    $startTime = Get-Date
+    $startTime = Get-Date -Second 0 -Millisecond 0
 
     while ($true) {
 
-        $messages = & gam.exe user "espmfa@camtechcs.com" print messages query -Filter "subject:Powerschool after:$(Get-Date -Format yyyy-MM-dd)" includespamtrash max_to_print 3 showbody convertcrnl
+        $messages = & gam.exe user "espmfa@camtechcs.com" print messages query "subject:Powerschool after:$(Get-Date -Format yyyy-MM-dd)" includespamtrash max_to_print 3 showbody convertcrnl
         
         $messages = $messages |
             ConvertFrom-Csv |
             Where-Object { ($_.Date | Get-Date) -ge $startTime }
 
-        @($messages.Body) -match "\d{6}"
+        $tokenMatches = $messages.body | Select-String -Pattern 'Code: (\d{6})' -AllMatches
 
-        if ($Matches) {
-            return $Matches[0].Groups[1].Value
+        if ($tokenMatches.Count -ge 1) {
+            Write-Warning -Message "MFA Code received. $($tokenMatches.Matches[0].Groups[1].Value)"
+            return $tokenMatches.Matches[0].Groups[1].Value
         } else {
+            Write-Warning -Message "Waiting for MFA Code email..."
             Start-Sleep -Seconds 5
         }
 
@@ -44,19 +46,21 @@ function Get-eSPMFACode {
 #Example for Gmail using PSGSuite
 function Get-eSPMFACode {
 
-    $startTime = Get-Date
+    $startTime = Get-Date -Seconds 0 -Millisecond 0
 
     while ($true) {
 
         $messages = Get-GSGmailMessageList -User "espmfa@camtechcs.com" -Filter "subject:Powerschool after:$(Get-Date -Format yyyy-MM-dd)" -IncludeSpamTrash -Limit 3 |
             Get-GSGmailMessage -ParseMessage |
-            Where-Object -Property Date -ge $startTime
+            Where-Object { $_.Date.LocalDateTime -ge $startTime }
 
-        @($messages.TextBody) -match "\d{6}"
+        $tokenMatches = $messages.HtmlBody | Select-String -Pattern 'Code: (\d{6})' -AllMatches
 
-        if ($Matches) {
-            return $Matches[0].Groups[1].Value
+        if ($tokenMatches.Count -ge 1) {
+            Write-Warning -Message "MFA Code received. $($tokenMatches.Matches[0].Groups[1].Value)"
+            return $tokenMatches.Matches[0].Groups[1].Value
         } else {
+            Write-Warning -Message "Waiting for MFA Code email..."
             Start-Sleep -Seconds 5
         }
 
@@ -79,17 +83,19 @@ function Get-eSPMFACode {
     $TenantId = 
     $ClientId = 
     $CertificateName = 
-    Connect-MgGraph -TenantId $TenantId -ClientId $ClientId -CertificateName $CertificateName
+    $msGraphMessage = Connect-MgGraph -TenantId $TenantId -ClientId $ClientId -CertificateName $CertificateName -NoWelcome #this returns a write-host string so its a part of the return. It must be assigned to a variable.
 
     while ($true) {
 
         $messages = Get-MgUserMessage -UserId "espmfa@camtechcs.com" -Filter "startswith(Subject,'Powerschool') and ReceivedDateTime ge $($startTime.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ"))" -Top 1
 
-        @($messages.BodyPreview) -match "\d{6}"
+        $tokenMatches = $messages.Body.Content | Select-String -Pattern 'Code: (\d{6})' -AllMatches
 
-        if ($Matches) {
-            return $Matches[0].Groups[1].Value
+        if ($tokenMatches.Count -ge 1) {
+            Write-Warning -Message "MFA Code received. $($tokenMatches.Matches[0].Groups[1].Value)"
+            return $tokenMatches.Matches[0].Groups[1].Value
         } else {
+            Write-Warning -Message "Waiting for MFA Code email..."
             Start-Sleep -Seconds 5
         }
 
@@ -97,7 +103,6 @@ function Get-eSPMFACode {
         if (((Get-Date) - $startTime).TotalMinutes -ge 5) {
             throw "MFA Code not received within 5 minutes."
         }
-
     }
 
 }

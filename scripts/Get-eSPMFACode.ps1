@@ -46,7 +46,7 @@ function Get-eSPMFACode {
 #Example for Gmail using PSGSuite
 function Get-eSPMFACode {
 
-    $startTime = Get-Date -Seconds 0 -Millisecond 0
+    $startTime = Get-Date -Second 0 -Millisecond 0
 
     while ($true) {
 

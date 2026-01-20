@@ -436,10 +436,14 @@ function Get-eSPFileList {
 
     #>
 
+    Param(
+        [Parameter(Mandatory=$false)][int]$NumberOfReports = 5000 # -1 will return all. For districts will a long history of reports this isn't reasonable.
+    )
+
     Assert-eSPSession
 
     $reports = Invoke-RestMethod `
-        -Uri "$($eschoolSession.Url)/Task/TaskAndReportData?includeTaskCount=true&includeReports=true&maximumNumberOfReports=-1&includeTasks=false&runningTasksOnly=false" `
+        -Uri "$($eschoolSession.Url)/Task/TaskAndReportData?includeTaskCount=true&includeReports=true&maximumNumberOfReports=$($NumberOfReports)&includeTasks=false&runningTasksOnly=false" `
         -WebSession $eschoolSession.Session | 
         Select-Object -ExpandProperty Reports |
         Select-Object -Property DisplayName,

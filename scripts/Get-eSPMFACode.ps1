@@ -24,7 +24,7 @@ function Get-eSPMFACode {
             ConvertFrom-Csv |
             Where-Object { ($_.Date | Get-Date) -ge $startTime }
 
-        $tokenMatches = $messages.body | Select-String -Pattern 'Code: (\d{6})' -AllMatches
+        $tokenMatches = $messages.body | Select-String -Pattern 'Code: (\d+)' -AllMatches
 
         if ($tokenMatches.Count -ge 1) {
             Write-Warning -Message "MFA Code received. $($tokenMatches.Matches[0].Groups[1].Value)"
@@ -54,7 +54,7 @@ function Get-eSPMFACode {
             Get-GSGmailMessage -ParseMessage |
             Where-Object { $_.Date.LocalDateTime -ge $startTime }
 
-        $tokenMatches = $messages.HtmlBody | Select-String -Pattern 'Code: (\d{6})' -AllMatches
+        $tokenMatches = $messages.HtmlBody | Select-String -Pattern 'Code: (\d+)' -AllMatches
 
         if ($tokenMatches.Count -ge 1) {
             Write-Warning -Message "MFA Code received. $($tokenMatches.Matches[0].Groups[1].Value)"
@@ -89,7 +89,7 @@ function Get-eSPMFACode {
 
         $messages = Get-MgUserMessage -UserId "espmfa@camtechcs.com" -Filter "startswith(Subject,'Powerschool') and ReceivedDateTime ge $($startTime.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ"))" -Top 1
 
-        $tokenMatches = $messages.Body.Content | Select-String -Pattern 'Code: (\d{6})' -AllMatches
+        $tokenMatches = $messages.Body.Content | Select-String -Pattern 'Code: (\d+)' -AllMatches
 
         if ($tokenMatches.Count -ge 1) {
             Write-Warning -Message "MFA Code received. $($tokenMatches.Matches[0].Groups[1].Value)"

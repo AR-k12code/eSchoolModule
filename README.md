@@ -1,10 +1,10 @@
 # eSchoolModule
-These scripts come without warranty of any kind. Use them at your own risk. I assume no liability for the accuracy, correctness, completeness, or usefulness of any information provided by this site nor for any sort of damages using these scripts may cause.
+These scripts come without warranty of any kind. Use them at your own risk. CAMTech Computer Services, LLC assumes no liability for the accuracy, correctness, completeness, or usefulness of any information provided by this site nor for any sort of damages using these scripts may cause.
 
 The eSchool Powershell Module requires PowerShell 7
 **DO NOT INSTALL THESE SCRIPTS TO A DOMAIN CONTROLLER.**
 
-Create a dedicated VM running Windows Server 2019 or Windows 10 Pro 1809+ for your automation scripts.
+Create a dedicated VM running Windows Server or Windows 11 Pro/Education for your automation scripts.
 
 ## License
 Commercial use of this module is strictly prohibited unless granted by CAMTech Computer Services, LLC in writing.
@@ -49,7 +49,7 @@ You NEED Read/Write to:
 - eSchoolPLUS System > Setup And Configuration > LOADDEFS
 
 # MFA Requirements Jan 2026
-You will be required to provide an MFA token from your email. You will be required to create your own function called "Get-eSPMFACode" that returns the 6 digit code from your email. An example of this function will be provided in the scripts\Get-eSPMFACode.ps1 file.
+You will be required to provide an MFA token from your email. You will be required to create your own function called "Get-eSPMFACode" that returns the verification code from your email. An example of this function will be provided in the scripts\Get-eSPMFACode.ps1 file.
 
 # Tutorial
 Coming Soon
@@ -121,7 +121,6 @@ Get-eSPStudents [-InActive] [-Graduated] [-All]
 Get-eSPStudents -Grade '01' -IncludeTable reg_academic,reg_notes
 ````
 
-
 ### List Staff Catalog
 ````
 Get-eSPStaffCatalog [[-Building] <Int32>]
@@ -146,17 +145,15 @@ Get-eSPMasterSchedule
 Built in download definitions will start with ESMD and upload defintions will start with ESMU. For the last character we will use [0-9] then [A-Z].
 
 ## Create Definitions
-- New-eSPEmailDefinitions (ESMD0,ESMU0,ESMU1)
-- New-eSPGuardianDefinitions (ESMD1,ESMU2,ESMU3,ESMU4)
-- New-eSPHACUploadDefinition (ESMU5)
-- New-eSPAttUploadDefinitions (ESMU6)
-- New-New-eSPMealStatusDefinitions (ESMD2,ESMD3,ESMU7,ESMU8)
+````
+Update-eSPInterfaceDefinitions
+````
 
 ### Download Definitions
 - ESMD0 - "eSchoolModule - Email Download Definition" - Download Contact_id,Student_id, and Email. Then you can process to fix them.
 - ESMD1 - "eSchoolModule - Guardian Duplication" - Download all the information needed to dedupe guardian contacts.
 - ESMD2 - "eSchoolModule - Meal Status" - Download the last 2 years of meal status data for active students.
-- ESMD2 - "eSchoolModule - Reg Entry Withdrawl" - Download the last 2 years of REG_ENTRY_WITH data.
+- ESMD3 - "eSchoolModule - Reg Entry Withdrawl" - Download the last 2 years of REG_ENTRY_WITH data.
 
 ### Upload Definitions
 - ESMU0 - "eSchoolModule - Email Upload Definition" - Upload Student Emails by Contact_id,Email
@@ -167,7 +164,8 @@ Built in download definitions will start with ESMD and upload defintions will st
 - ESMU5 - "eSchoolModule - Upload HAC Usernames for Contact ID" - Fix usernames for HAC. This does not fix passwords or generate Access Codes.
 - ESMU6 - "eSchoolModule - Upload Attendance" - Push attendance from 3rd party programs back into eSchool. You must be able to match the period name.
 - ESMU7 - "eSchoolModule - Upload Meal Status" - Upload Meal Status from Cafeteria Softare. (Required for updating existing Meal Statuses and inserting new.)
-- ESMU8 - "eSchoolModule - Upload Meal Status 2" - Upload Meal Status from Cafeteria Softare. (Required for closing priort vector dates and inserting new. Does not update existing.)
+- ESMU8 - "eSchoolModule - Upload Meal Status 2" - Upload Meal Status from Cafeteria Softare. (Required for closing prior vector dates and inserting new. Does not update existing.)
+- ESMU9 - "eSchoolModule - Attendance w/o Modify Audit Log" - Update an attendance record without overwritting the audit log as well.
 
 ## Definition Creator
 Think Bigger!

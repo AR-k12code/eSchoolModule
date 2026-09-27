@@ -31,7 +31,7 @@ try {
 
     @("ESMD0","ESMU0","ESMU1") | ForEach-Object {
         if ($definitions -notcontains $PSItem) {
-            Throw "Missing Defininition $($PSItem). New-eSPEmailDefinitions -Force"
+            Throw "Missing Defininition $($PSItem). Update-eSPInterfaceDefinitions -Force"
         }
     }
 

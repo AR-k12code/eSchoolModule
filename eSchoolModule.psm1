@@ -345,7 +345,7 @@ function Connect-ToeSchool {
 
             #MFA Prompt
             if ((Get-Command -Name "Get-eSPMFACode" -ErrorAction SilentlyContinue) -and (-Not($ManualMFA))) {
-                $mfacode = Get-eSPMFACode
+                $mfacode = Get-eSPMFACode $ConfigName
             } else {
                 Write-Warning "Get-eSPMFACode function not found. Please enter the MFA code manually."
                 $mfacode = Read-Host -Prompt "Enter MFA Code"
@@ -987,6 +987,8 @@ function Get-eSPTaskList {
                 Where-Object { $PSItem.ErrorOccurred -ne 'True' })
         }
     }
+
+    Save-WebSession -Session $eSchoolSession.Session -Path "$HOME\.config\eSchool\$($eschoolSession.Params.ConfigName).xml" -TargetUri $eschoolSession.Url -Silent
 
     return $tasks
 
@@ -1807,482 +1809,6 @@ function Get-eSPSecRoles {
     $roles = Invoke-eSPExecuteSearch -SearchType USER -SearchParams $params
 
     return $roles
-
-}
-
-function New-eSPEmailDefinitions {
-    <#
-
-    .SYNOPSIS
-    This function will create the Upload and Download Definitions used to fix upload definitions.
-    Download Definition : ESMD0, Upload Definition : ESMU0,ESMU1
-
-    #>
-
-    <# 
-
-    Download Definition
-
-    #>
-
-    Param(
-        [Parameter(Mandatory=$false)][Switch]$Force
-    )
-
-    Assert-eSPSession
-
-    $newDefinition = New-espDefinitionTemplate -InterfaceId ESMD0 -Description "eSchoolModule - Email Download Definition"
-
-    $newDefinition.UploadDownloadDefinition.InterfaceHeaders += New-eSPInterfaceHeader `
-        -InterfaceId "ESMD0" `
-        -HeaderId 1 `
-        -HeaderOrder 1 `
-        -FileName "student_email_download.csv" `
-        -TableName "reg_contact" `
-        -Description "eSchoolModule - Email Download Definition" `
-        -AdditionalSql 'INNER JOIN reg_stu_contact ON reg_stu_contact.contact_id = reg_contact.contact_id INNER JOIN reg ON reg.student_id = reg_stu_contact.student_id'
-        
-    $rows = @(
-        @{ table = "reg"; column = "STUDENT_ID"; length = 20 },
-        @{ table = "reg_contact"; column = "CONTACT_ID"; length = 20 },
-        @{ table = "reg_contact"; column = "EMAIL"; length = 250 },
-        @{ table = "reg_stu_contact"; column = "WEB_ACCESS"; length = 1 },
-        @{ table = "reg_stu_contact"; column = "CONTACT_PRIORITY"; length = 2 },
-        @{ table = "reg_stu_contact"; column = "CONTACT_TYPE"; length = 1 }
-    )
-
-    $columns = @()
-    $columnNum = 1
-    $rows | ForEach-Object {
-        $columns += New-eSPDefinitionColumn -InterfaceID 'ESMD0' -HeaderID 1 -TableName $($PSitem.table) -FieldId $columnNum -FieldOrder $columnNum -ColumnName $($PSitem.column) -FieldLength $($PSItem.length)
-        $columnNum++
-    }
-
-    $newDefinition.UploadDownloadDefinition.InterfaceHeaders[0].InterfaceDetails = $columns
-
-    Write-Verbose ($newDefinition | ConvertTo-Json -Depth 6)
- 
-    Submit-eSPDefinition -Definition $newDefinition -Force
-
-    <#
-        Upload Definition
-    #>
-
-    $newDefinition = New-espDefinitionTemplate -InterfaceId ESMU0 -Description "eSchoolModule - Email Upload Definition" -DefinitionType Upload
-
-    $newDefinition.UploadDownloadDefinition.InterfaceHeaders += New-eSPInterfaceHeader `
-        -InterfaceId "ESMU0" `
-        -HeaderId 1 `
-        -HeaderOrder 1 `
-        -FileName "student_email_upload.csv" `
-        -TableName "reg_contact" `
-        -Description "Automated Student Email Upload Definition"
-        
-    $rows = @(
-        @{ table = "reg_contact"; column = "CONTACT_ID"; length = 20 },
-        @{ table = "reg_contact"; column = "EMAIL"; length = 250 }
-    )
-
-    $columns = @()
-    $columnNum = 1
-    $rows | ForEach-Object {
-        $columns += New-eSPDefinitionColumn -InterfaceID 'ESMU0' -HeaderID 1 -TableName $($PSitem.table) -FieldId $columnNum -FieldOrder $columnNum -ColumnName $($PSitem.column) -FieldLength $($PSItem.length)
-        $columnNum++
-    }
-
-    $newDefinition.UploadDownloadDefinition.InterfaceHeaders[0].InterfaceDetails = $columns
-
-    Write-Verbose ($newDefinition | ConvertTo-Json -Depth 6)
- 
-    Submit-eSPDefinition -Definition $newDefinition -Force
-
-    <#
-        Web Access Upload Definition.
-    #>
-
-    $newDefinition = New-espDefinitionTemplate -InterfaceId ESMU1 -Description "eSchoolModule - Web Access Upload Definition" -DefinitionType Upload
-
-    $newDefinition.UploadDownloadDefinition.InterfaceHeaders += New-eSPInterfaceHeader `
-        -InterfaceId "ESMU1" `
-        -HeaderId 1 `
-        -HeaderOrder 1 `
-        -FileName "webaccess_upload.csv" `
-        -TableName "reg_stu_contact" `
-        -Description "Automated Student Web Access Upload Definition"
-    
-    $rows = @(
-        @{ table = "reg_stu_contact"; column = "CONTACT_ID"; length = 20 },
-        @{ table = "reg_stu_contact"; column = "STUDENT_ID"; length = 20 },
-        @{ table = "reg_stu_contact"; column = "WEB_ACCESS"; length = 1 },
-        @{ table = "reg_stu_contact"; column = "CONTACT_TYPE"; length = 1 }
-    )
-
-    $columns = @()
-    $columnNum = 1
-    $rows | ForEach-Object {
-        $columns += New-eSPDefinitionColumn -InterfaceID 'ESMU1' -HeaderID 1 -TableName $($PSitem.table) -FieldId $columnNum -FieldOrder $columnNum -ColumnName $($PSitem.column) -FieldLength $($PSItem.length)
-        $columnNum++
-    }
-
-    $newDefinition.UploadDownloadDefinition.InterfaceHeaders[0].InterfaceDetails = $columns
-    
-    Write-Verbose ($newDefinition | ConvertTo-Json -Depth 6)
- 
-    Submit-eSPDefinition -Definition $newDefinition -Force
-
-}
-
-function New-eSPGuardianDefinitions {
-
-    <#
-    
-    .SYNOPSIS
-    Create the Upload/Download definitions required to dedupe Guardians.
-    
-    #>
-
-    Assert-eSPSession
-
-    #bulk download the 4 tables needed.
-    New-eSPBulkDownloadDefinition `
-        -Tables @("REG","REG_STU_CONTACT","REG_CONTACT","REG_CONTACT_PHONE") `
-        -InterfaceId "ESMD1" `
-        -DoNotLimitSchoolYear `
-        -Delimiter '|' `
-        -Description "eSchoolModule - Guardian Duplication Data" `
-        -FilePrefix "GUARD_" `
-        -Force
-
-    $newDefinition = New-eSPDefinitionTemplate `
-        -DefinitionType Upload `
-        -InterfaceId "ESMU2" `
-        -Description "eSchoolModule - Move Duplicate Guardian Priority"
-
-    $newDefinition.UploadDownloadDefinition.InterfaceHeaders += New-eSPInterfaceHeader `
-        -InterfaceId "ESMU2" `
-        -HeaderId 1 `
-        -HeaderOrder 1 `
-        -FileName "duplicate_guardians_to_99.csv" `
-        -TableName "reg_stu_contact" `
-        -Description "eSchoolModule - Move Duplicate Guardian Priority"
-
-    $index = 1
-    @("CONTACT_ID","STUDENT_ID","CONTACT_PRIORITY","CONTACT_TYPE") | ForEach-Object {
-        $newDefinition.UploadDownloadDefinition.InterfaceHeaders[0].InterfaceDetails +=	New-eSPDefinitionColumn `
-            -InterfaceId "ESMU2" `
-            -HeaderId 1 `
-            -TableName "reg_stu_contact" `
-            -FieldId $index `
-            -FieldOrder $index `
-            -ColumnName "$PSitem" `
-            -FieldLength 255
-        $index++
-    }
-    
-    #Upload Existing Contacts in the Place of the Duplicate.
-    Write-Verbose ($newDefinition | ConvertTo-Json -Depth 6)
-    Submit-eSPDefinition -Definition $newDefinition -Force
-
-    $newDefinition = New-eSPDefinitionTemplate `
-        -DefinitionType Upload `
-        -InterfaceId "ESMU3" `
-        -Description "eSchoolModule - Connect Duplicate Guardians"
-
-    $newDefinition.UploadDownloadDefinition.InterfaceHeaders += New-eSPInterfaceHeader `
-        -InterfaceId "ESMU3" `
-        -HeaderId 1 `
-        -HeaderOrder 1 `
-        -FileName "duplicate_guardians_fix.csv" `
-        -TableName "reg_stu_contact" `
-        -Description "eSchoolModule - Connect Duplicate Guardians"
-
-    $index = 1
-    @("CONTACT_ID","COMMENTS","CONTACT_PRIORITY","CONTACT_TYPE","CUST_GUARD","DISTRICT","LEGAL_GUARD","LIVING_WITH","MAIL_ATT","MAIL_DISC","MAIL_FEES","MAIL_IPR","MAIL_MED","MAIL_RC","MAIL_REG","MAIL_SCHD","MAIL_SSP","RELATION_CODE","STUDENT_ID","TRANSPORT_FROM","TRANSPORT_TO","UPD_STU_EO_INFO","WEB_ACCESS") | ForEach-Object {
-        $newDefinition.UploadDownloadDefinition.InterfaceHeaders[0].InterfaceDetails +=	New-eSPDefinitionColumn `
-            -InterfaceId "ESMU3" `
-            -HeaderId 1 `
-            -TableName "reg_stu_contact" `
-            -FieldId $index `
-            -FieldOrder $index `
-            -ColumnName "$PSitem" `
-            -FieldLength 255
-        $index++
-    }
-    
-    Write-Verbose ($newDefinition | ConvertTo-Json -Depth 6)
-    Submit-eSPDefinition -Definition $newDefinition -Force
-
-    #Since we are trying to merge records we should also create an upload definition for Phone Numbers.
-    $newDefinition = New-eSPDefinitionTemplate `
-        -DefinitionType Upload `
-        -InterfaceId "ESMU4" `
-        -Description "eSchoolModule - Merge Duplicate Guardian Phone Numbers"
-
-    $newDefinition.UploadDownloadDefinition.InterfaceHeaders += New-eSPInterfaceHeader `
-        -InterfaceId "ESMU4" `
-        -HeaderId 1 `
-        -HeaderOrder 1 `
-        -FileName "duplicate_guardian_phone_numbers.csv" `
-        -TableName "reg_contact_phone" `
-        -Description "eSchoolModule - Merge Duplicate Guardian Phone Numbers"
-
-    $index = 1
-    @("CONTACT_ID","DISTRICT","PHONE","PHONE_EXTENSION","PHONE_LISTING","PHONE_PRIORITY","PHONE_TYPE","SIF_REFID") | ForEach-Object {
-        $newDefinition.UploadDownloadDefinition.InterfaceHeaders[0].InterfaceDetails +=	New-eSPDefinitionColumn `
-            -InterfaceId "ESMU4" `
-            -HeaderId 1 `
-            -TableName "reg_contact_phone" `
-            -FieldId $index `
-            -FieldOrder $index `
-            -ColumnName "$PSitem" `
-            -FieldLength 255
-        $index++
-    }
-    
-    Write-Verbose ($newDefinition | ConvertTo-Json -Depth 6)
-    Submit-eSPDefinition -Definition $newDefinition -Force
-}
-
-function New-eSPHACUploadDefinition {
-    <#
-
-    .SYNOPSIS
-    This function will create the Upload and Download Definitions used to fix HAC usernames.
-    
-    #>
-    
-    Param(
-        [Parameter(Mandatory=$false)][Switch]$Force
-    )
-
-    Assert-eSPSession
-
-    <#
-        Upload Definition
-    #>
-
-    $newDefinition = New-espDefinitionTemplate -InterfaceId ESMU5 -Description "eSchoolModule - HAC LoginID" -DefinitionType Upload
-
-    $newDefinition.UploadDownloadDefinition.InterfaceHeaders += New-eSPInterfaceHeader `
-        -InterfaceId "ESMU5" `
-        -HeaderId 1 `
-        -HeaderOrder 1 `
-        -FileName "hac_loginids.csv" `
-        -TableName "reg_contact" `
-        -Description "HAC Login IDs Upload Definition"
-        
-    $rows = @(
-        @{ table = "reg_contact"; column = "CONTACT_ID"; length = 20 },
-        @{ table = "reg_contact"; column = "LOGIN_ID"; length = 250 }
-    )
-
-    $columns = @()
-    $columnNum = 1
-    $rows | ForEach-Object {
-        $columns += New-eSPDefinitionColumn -InterfaceID 'ESMU5' -HeaderID 1 -TableName $($PSitem.table) -FieldId $columnNum -FieldOrder $columnNum -ColumnName $($PSitem.column) -FieldLength $($PSItem.length)
-        $columnNum++
-    }
-
-    $newDefinition.UploadDownloadDefinition.InterfaceHeaders[0].InterfaceDetails = $columns
-
-    Write-Verbose ($newDefinition | ConvertTo-Json -Depth 6)
-    Submit-eSPDefinition -Definition $newDefinition -Force
-
-}
-
-function New-eSPAttUploadDefinitions {
-
-    <#
-    
-    .SYNOPSIS
-    Create the upload definitions required to upload attendance.
-    
-    #>
-
-    Assert-eSPSession
-
-    $newDefinition = New-eSPDefinitionTemplate `
-        -DefinitionType Upload `
-        -InterfaceId "ESMU6" `
-        -Description "eSchoolModule - Upload Attendance"
-
-    $newDefinition.UploadDownloadDefinition.InterfaceHeaders += New-eSPInterfaceHeader `
-        -InterfaceId "ESMU6" `
-        -HeaderId 1 `
-        -HeaderOrder 1 `
-        -FileName "attendance_upload.csv" `
-        -TableName "att_bottomline" `
-        -Description "eSchoolModule - ATT_BOTTOMLINE"
-
-    $index = 1
-    @("STUDENT_ID","BUILDING","ATTENDANCE_CODE","ATTENDANCE_DATE","ATTENDANCE_PERIOD","ATT_COMMENT","SCHOOL_YEAR","SOURCE","SEQUENCE_NUM","SUMMER_SCHOOL","MINUTES_ABSENT") | ForEach-Object {
-        $newDefinition.UploadDownloadDefinition.InterfaceHeaders[0].InterfaceDetails +=	New-eSPDefinitionColumn `
-            -InterfaceId "ESMU6" `
-            -HeaderId 1 `
-            -TableName "att_bottomline" `
-            -FieldId $index `
-            -FieldOrder $index `
-            -ColumnName "$PSitem" `
-            -FieldLength 255
-        $index++
-    }
-
-    $newDefinition.UploadDownloadDefinition.InterfaceHeaders += New-eSPInterfaceHeader `
-        -InterfaceId "ESMU6" `
-        -HeaderId 2 `
-        -HeaderOrder 2 `
-        -FileName "attendance_upload.csv" `
-        -TableName "att_audit_trail" `
-        -Description "eSchoolModule - ATT_AUDIT_TRAIL"
-
-    $index = 1
-    @("STUDENT_ID","BUILDING","ATTENDANCE_CODE","ATTENDANCE_DATE","ATTENDANCE_PERIOD","ATT_COMMENT","SCHOOL_YEAR","SOURCE","SEQUENCE_NUM","SUMMER_SCHOOL","MINUTES_ABSENT","ENTRY_DATE_TIME","ENTRY_USER","ENTRY_ORDER_NUM","BOTTOMLINE") | ForEach-Object {
-        $newDefinition.UploadDownloadDefinition.InterfaceHeaders[1].InterfaceDetails +=	New-eSPDefinitionColumn `
-            -InterfaceId "ESMU6" `
-            -HeaderId 2 `
-            -TableName "att_audit_trail" `
-            -FieldId $index `
-            -FieldOrder $index `
-            -ColumnName "$PSitem" `
-            -FieldLength 255
-        $index++
-    }
-    
-    #Upload Existing Contacts in the Place of the Duplicate.
-    Write-Verbose ($newDefinition | ConvertTo-Json -Depth 6)
-    Submit-eSPDefinition -Definition $newDefinition -Force
-
-}
-
-function New-eSPMealStatusDefinitions {
-    <#
-        .SYNOPSIS
-        This will create the definitions ESMD2 and ESMU7 for the Meal Status Upload/Download.
-
-        .DESCRIPTION
-        
-    #>
-
-    $newDefinition = New-eSPDefinitionTemplate `
-        -DefinitionType Download `
-        -InterfaceId "ESMD2" `
-        -Description "eSchoolModule - Meal Status"
-
-    $newDefinition.UploadDownloadDefinition.InterfaceHeaders += New-eSPInterfaceHeader `
-        -InterfaceId "ESMD2" `
-        -HeaderId 1 `
-        -HeaderOrder 1 `
-        -FileName "esp_meal_status.csv" `
-        -TableName "reg_programs" `
-        -Description "eSchoolModule - Meal Status" `
-        -AdditionalSQL 'LEFT JOIN REG ON REG_PROGRAMS.STUDENT_ID = REG.STUDENT_ID WHERE REG_PROGRAMS.PROGRAM_ID = ''ARSES'' AND REG.CURRENT_STATUS = ''A'' AND REG_PROGRAMS.START_DATE > DATEADD(year, -2, GETDATE())'
-
-    $index = 1
-    @("DISTRICT","PROGRAM_ID","FIELD_NUMBER","STUDENT_ID","START_DATE","SUMMER_SCHOOL","ENTRY_REASON","PROGRAM_VALUE","END_DATE","WITHDRAWAL_REASON","PROGRAM_OVERRIDE","CHANGE_DATE_TIME","CHANGE_UID") | ForEach-Object {
-        $newDefinition.UploadDownloadDefinition.InterfaceHeaders[0].InterfaceDetails +=	New-eSPDefinitionColumn `
-            -InterfaceId "ESMD2" `
-            -HeaderId 1 `
-            -TableName "reg_programs" `
-            -FieldId $index `
-            -FieldOrder $index `
-            -ColumnName "$PSitem" `
-            -FieldLength 255
-        $index++
-    }
-
-    #we need REG_PERSONAL for the MEAL_STATUS column.
-    $newDefinition.UploadDownloadDefinition.InterfaceHeaders += New-eSPInterfaceHeader `
-        -InterfaceId "ESMD2" `
-        -HeaderId 2 `
-        -HeaderOrder 2 `
-        -FileName "esp_meal_status_reg_personal.csv" `
-        -TableName "reg_personal" `
-        -Description "eSchoolModule - Meal Status" `
-        -AdditionalSQL 'LEFT JOIN REG ON REG_PERSONAL.STUDENT_ID = REG.STUDENT_ID WHERE REG.CURRENT_STATUS = ''A'''
-
-    $index = 1
-    @("STUDENT_ID","MEAL_STATUS") | ForEach-Object {
-        $newDefinition.UploadDownloadDefinition.InterfaceHeaders[1].InterfaceDetails +=	New-eSPDefinitionColumn `
-            -InterfaceId "ESMD2" `
-            -HeaderId 2 `
-            -TableName "reg_personal" `
-            -FieldId $index `
-            -FieldOrder $index `
-            -ColumnName "$PSitem" `
-            -FieldLength 255
-        $index++
-    }
-
-    Write-Verbose ($newDefinition | ConvertTo-Json -Depth 6)
-    Submit-eSPDefinition -Definition $newDefinition -Force
-
-    #Upload Definition
-    $newDefinition = New-eSPDefinitionTemplate -InterfaceId ESMU7 -Description "eSchoolModule - Upload Meal Status" -DefinitionType Upload
-
-    $newDefinition.UploadDownloadDefinition.InterfaceHeaders += New-eSPInterfaceHeader `
-        -InterfaceId "ESMU7" `
-        -HeaderId 1 `
-        -HeaderOrder 1 `
-        -FileName "meal_status_upload.csv" `
-        -TableName "reg_programs" `
-        -Description "Meal Status Upload"
-
-    $rows = @(
-        @{ table = "reg_programs"; column = "STUDENT_ID"; length = 10 },
-        @{ table = "reg_programs"; column = "PROGRAM_ID"; length = 5 },
-        @{ table = "reg_programs"; column = "PROGRAM_VALUE"; length = 2 },
-        @{ table = "reg_programs"; column = "FIELD_NUMBER"; length = 1 },
-        @{ table = "reg_programs"; column = "START_DATE"; length = 10 },
-        @{ table = "reg_programs"; column = "END_DATE"; length = 10 },
-        @{ table = "reg_programs"; column = "SUMMER_SCHOOL"; length = 1 },
-        @{ table = "reg_programs"; column = "PROGRAM_OVERRIDE"; length = 1 }
-    )
-
-    $columns = @()
-    $columnNum = 1
-    $rows | ForEach-Object {
-        $columns += New-eSPDefinitionColumn -InterfaceID 'ESMU7' -HeaderID 1 -TableName $($PSitem.table) -FieldId $columnNum -FieldOrder $columnNum -ColumnName $($PSitem.column) -FieldLength $($PSItem.length)
-        $columnNum++
-    }
-
-    $newDefinition.UploadDownloadDefinition.InterfaceHeaders[0].InterfaceDetails = $columns
-
-    Write-Verbose ($newDefinition | ConvertTo-Json -Depth 6)
-    Submit-eSPDefinition -Definition $newDefinition -Force
-
-    #Upload Definition - by having the MEAL_STATUS column eSchool will automatically try to do the program/vector dates.
-    $newDefinition = New-eSPDefinitionTemplate -InterfaceId ESMU8 -Description "eSchoolModule - Upload Meal Status 2" -DefinitionType Upload
-
-    $newDefinition.UploadDownloadDefinition.InterfaceHeaders += New-eSPInterfaceHeader `
-        -InterfaceId "ESMU8" `
-        -HeaderId 1 `
-        -HeaderOrder 1 `
-        -FileName "meal_status_upload_changes.csv" `
-        -TableName "reg_personal" `
-        -Description "Meal Status Upload"
-
-    $rows = @(
-        @{ table = "reg_personal"; column = "STUDENT_ID"; length = 10 },
-        @{ table = "reg_personal"; column = "MEAL_STATUS"; length = 2 },
-        @{ table = "DUMMY"; column = "DUMMY"; length = 10 },
-        @{ table = "DUMMY"; column = "DUMMY"; length = 10 },
-        @{ table = "DUMMY"; column = "DUMMY"; length = 10 }
-    )
-
-    $columns = @()
-    $columnNum = 1
-    $rows | ForEach-Object {
-        $columns += New-eSPDefinitionColumn -InterfaceID 'ESMU8' -HeaderID 1 -TableName $($PSitem.table) -FieldId $columnNum -FieldOrder $columnNum -ColumnName $($PSitem.column) -FieldLength $($PSItem.length)
-        $columnNum++
-    }
-
-    $newDefinition.UploadDownloadDefinition.InterfaceHeaders[0].InterfaceDetails = $columns
-
-    Write-Verbose ($newDefinition | ConvertTo-Json -Depth 6)
-    Submit-eSPDefinition -Definition $newDefinition -Force
-
-    #Create the ESMD3 definition for the REG_ENTRY_WITH table to get the last 2 years. Filename will be 2YR_REG_ENTRY_WITH.csv
-    New-eSPBulkDownloadDefinition -Tables REG_ENTRY_WITH -InterfaceId "ESMD3" -Description "eSchoolModule - REG_ENTRY_WITH" -AdditionalSQL "WHERE SCHOOL_YEAR > DATEPART(year,DATEADD(year, -2, GETDATE()))" -FilePrefix '2YR_' -DoNotLimitSchoolYear -Force
 
 }
 
@@ -19970,4 +19496,460 @@ function Restore-WebSession {
 
     Write-Host "Session restored from '$Path'" -ForegroundColor Green
     return $newSession
+}
+
+function Update-eSPInterfaceDefinitions {
+    <#
+
+    .SYNOPSIS
+    Create or update eSchool Interface Definitions
+
+    #>
+
+    Assert-eSPSession
+
+    <# ESMD0 - Download Student Emails #>
+
+    $newDefinition = New-espDefinitionTemplate -InterfaceId ESMD0 -Description "eSchoolModule - Email Download Definition"
+
+    $newDefinition.UploadDownloadDefinition.InterfaceHeaders += New-eSPInterfaceHeader `
+        -InterfaceId "ESMD0" `
+        -HeaderId 1 `
+        -HeaderOrder 1 `
+        -FileName "student_email_download.csv" `
+        -TableName "reg_contact" `
+        -Description "eSchoolModule - Email Download Definition" `
+        -AdditionalSql 'INNER JOIN reg_stu_contact ON reg_stu_contact.contact_id = reg_contact.contact_id INNER JOIN reg ON reg.student_id = reg_stu_contact.student_id'
+        
+    $rows = @(
+        @{ table = "reg"; column = "STUDENT_ID"; length = 20 },
+        @{ table = "reg_contact"; column = "CONTACT_ID"; length = 20 },
+        @{ table = "reg_contact"; column = "EMAIL"; length = 250 },
+        @{ table = "reg_stu_contact"; column = "WEB_ACCESS"; length = 1 },
+        @{ table = "reg_stu_contact"; column = "CONTACT_PRIORITY"; length = 2 },
+        @{ table = "reg_stu_contact"; column = "CONTACT_TYPE"; length = 1 }
+    )
+
+    $columns = @()
+    $columnNum = 1
+    $rows | ForEach-Object {
+        $columns += New-eSPDefinitionColumn -InterfaceID 'ESMD0' -HeaderID 1 -TableName $($PSitem.table) -FieldId $columnNum -FieldOrder $columnNum -ColumnName $($PSitem.column) -FieldLength $($PSItem.length)
+        $columnNum++
+    }
+
+    $newDefinition.UploadDownloadDefinition.InterfaceHeaders[0].InterfaceDetails = $columns
+
+    Write-Verbose ($newDefinition | ConvertTo-Json -Depth 6)
+ 
+    Submit-eSPDefinition -Definition $newDefinition -Force
+
+    <# ESMU0 - Upload Student Emails #>
+
+    $newDefinition = New-espDefinitionTemplate -InterfaceId ESMU0 -Description "eSchoolModule - Email Upload Definition" -DefinitionType Upload
+
+    $newDefinition.UploadDownloadDefinition.InterfaceHeaders += New-eSPInterfaceHeader `
+        -InterfaceId "ESMU0" `
+        -HeaderId 1 `
+        -HeaderOrder 1 `
+        -FileName "student_email_upload.csv" `
+        -TableName "reg_contact" `
+        -Description "Automated Student Email Upload Definition"
+        
+    $rows = @(
+        @{ table = "reg_contact"; column = "CONTACT_ID"; length = 20 },
+        @{ table = "reg_contact"; column = "EMAIL"; length = 250 }
+    )
+
+    $columns = @()
+    $columnNum = 1
+    $rows | ForEach-Object {
+        $columns += New-eSPDefinitionColumn -InterfaceID 'ESMU0' -HeaderID 1 -TableName $($PSitem.table) -FieldId $columnNum -FieldOrder $columnNum -ColumnName $($PSitem.column) -FieldLength $($PSItem.length)
+        $columnNum++
+    }
+
+    $newDefinition.UploadDownloadDefinition.InterfaceHeaders[0].InterfaceDetails = $columns
+
+    Write-Verbose ($newDefinition | ConvertTo-Json -Depth 6)
+ 
+    Submit-eSPDefinition -Definition $newDefinition -Force
+
+    <# ESMU1 - Set Web Access Flag #>
+
+    $newDefinition = New-espDefinitionTemplate -InterfaceId ESMU1 -Description "eSchoolModule - Web Access Upload Definition" -DefinitionType Upload
+
+    $newDefinition.UploadDownloadDefinition.InterfaceHeaders += New-eSPInterfaceHeader `
+        -InterfaceId "ESMU1" `
+        -HeaderId 1 `
+        -HeaderOrder 1 `
+        -FileName "webaccess_upload.csv" `
+        -TableName "reg_stu_contact" `
+        -Description "Automated Student Web Access Upload Definition"
+    
+    $rows = @(
+        @{ table = "reg_stu_contact"; column = "CONTACT_ID"; length = 20 },
+        @{ table = "reg_stu_contact"; column = "STUDENT_ID"; length = 20 },
+        @{ table = "reg_stu_contact"; column = "WEB_ACCESS"; length = 1 },
+        @{ table = "reg_stu_contact"; column = "CONTACT_TYPE"; length = 1 }
+    )
+
+    $columns = @()
+    $columnNum = 1
+    $rows | ForEach-Object {
+        $columns += New-eSPDefinitionColumn -InterfaceID 'ESMU1' -HeaderID 1 -TableName $($PSitem.table) -FieldId $columnNum -FieldOrder $columnNum -ColumnName $($PSitem.column) -FieldLength $($PSItem.length)
+        $columnNum++
+    }
+
+    $newDefinition.UploadDownloadDefinition.InterfaceHeaders[0].InterfaceDetails = $columns
+    
+    Write-Verbose ($newDefinition | ConvertTo-Json -Depth 6)
+ 
+    Submit-eSPDefinition -Definition $newDefinition -Force
+
+    <# ESMD1 - Guardian Duplication Data #>
+
+    #bulk download the 4 tables needed.
+    New-eSPBulkDownloadDefinition `
+        -Tables @("REG","REG_STU_CONTACT","REG_CONTACT","REG_CONTACT_PHONE") `
+        -InterfaceId "ESMD1" `
+        -DoNotLimitSchoolYear `
+        -Delimiter '|' `
+        -Description "eSchoolModule - Guardian Duplication Data" `
+        -FilePrefix "GUARD_" `
+        -Force
+
+    <# ESMU2 - Move Duplicate Guardian Priority #>
+
+    $newDefinition = New-eSPDefinitionTemplate `
+        -DefinitionType Upload `
+        -InterfaceId "ESMU2" `
+        -Description "eSchoolModule - Move Duplicate Guardian Priority"
+
+    $newDefinition.UploadDownloadDefinition.InterfaceHeaders += New-eSPInterfaceHeader `
+        -InterfaceId "ESMU2" `
+        -HeaderId 1 `
+        -HeaderOrder 1 `
+        -FileName "duplicate_guardians_to_99.csv" `
+        -TableName "reg_stu_contact" `
+        -Description "eSchoolModule - Move Duplicate Guardian Priority"
+
+    $index = 1
+    @("CONTACT_ID","STUDENT_ID","CONTACT_PRIORITY","CONTACT_TYPE") | ForEach-Object {
+        $newDefinition.UploadDownloadDefinition.InterfaceHeaders[0].InterfaceDetails +=	New-eSPDefinitionColumn `
+            -InterfaceId "ESMU2" `
+            -HeaderId 1 `
+            -TableName "reg_stu_contact" `
+            -FieldId $index `
+            -FieldOrder $index `
+            -ColumnName "$PSitem" `
+            -FieldLength 255
+        $index++
+    }
+    
+    #Upload Existing Contacts in the Place of the Duplicate.
+    Write-Verbose ($newDefinition | ConvertTo-Json -Depth 6)
+    Submit-eSPDefinition -Definition $newDefinition -Force
+
+    <# ESMU3 - Connect Duplicate Guardians #>
+
+    $newDefinition = New-eSPDefinitionTemplate `
+        -DefinitionType Upload `
+        -InterfaceId "ESMU3" `
+        -Description "eSchoolModule - Connect Duplicate Guardians"
+
+    $newDefinition.UploadDownloadDefinition.InterfaceHeaders += New-eSPInterfaceHeader `
+        -InterfaceId "ESMU3" `
+        -HeaderId 1 `
+        -HeaderOrder 1 `
+        -FileName "duplicate_guardians_fix.csv" `
+        -TableName "reg_stu_contact" `
+        -Description "eSchoolModule - Connect Duplicate Guardians"
+
+    $index = 1
+    @("CONTACT_ID","COMMENTS","CONTACT_PRIORITY","CONTACT_TYPE","CUST_GUARD","DISTRICT","LEGAL_GUARD","LIVING_WITH","MAIL_ATT","MAIL_DISC","MAIL_FEES","MAIL_IPR","MAIL_MED","MAIL_RC","MAIL_REG","MAIL_SCHD","MAIL_SSP","RELATION_CODE","STUDENT_ID","TRANSPORT_FROM","TRANSPORT_TO","UPD_STU_EO_INFO","WEB_ACCESS") | ForEach-Object {
+        $newDefinition.UploadDownloadDefinition.InterfaceHeaders[0].InterfaceDetails +=	New-eSPDefinitionColumn `
+            -InterfaceId "ESMU3" `
+            -HeaderId 1 `
+            -TableName "reg_stu_contact" `
+            -FieldId $index `
+            -FieldOrder $index `
+            -ColumnName "$PSitem" `
+            -FieldLength 255
+        $index++
+    }
+    
+    Write-Verbose ($newDefinition | ConvertTo-Json -Depth 6)
+    Submit-eSPDefinition -Definition $newDefinition -Force
+
+    <# ESMU4 - Merge Duplicate Guardian Phone Numbers #>
+
+    #Since we are trying to merge records we should also create an upload definition for Phone Numbers.
+    $newDefinition = New-eSPDefinitionTemplate `
+        -DefinitionType Upload `
+        -InterfaceId "ESMU4" `
+        -Description "eSchoolModule - Merge Duplicate Guardian Phone Numbers"
+
+    $newDefinition.UploadDownloadDefinition.InterfaceHeaders += New-eSPInterfaceHeader `
+        -InterfaceId "ESMU4" `
+        -HeaderId 1 `
+        -HeaderOrder 1 `
+        -FileName "duplicate_guardian_phone_numbers.csv" `
+        -TableName "reg_contact_phone" `
+        -Description "eSchoolModule - Merge Duplicate Guardian Phone Numbers"
+
+    $index = 1
+    @("CONTACT_ID","DISTRICT","PHONE","PHONE_EXTENSION","PHONE_LISTING","PHONE_PRIORITY","PHONE_TYPE","SIF_REFID") | ForEach-Object {
+        $newDefinition.UploadDownloadDefinition.InterfaceHeaders[0].InterfaceDetails +=	New-eSPDefinitionColumn `
+            -InterfaceId "ESMU4" `
+            -HeaderId 1 `
+            -TableName "reg_contact_phone" `
+            -FieldId $index `
+            -FieldOrder $index `
+            -ColumnName "$PSitem" `
+            -FieldLength 255
+        $index++
+    }
+    
+    Write-Verbose ($newDefinition | ConvertTo-Json -Depth 6)
+    Submit-eSPDefinition -Definition $newDefinition -Force
+
+    <# ESMU5 - HAC LoginID Upload Definition #>
+    
+    $newDefinition = New-espDefinitionTemplate -InterfaceId ESMU5 -Description "eSchoolModule - HAC LoginID" -DefinitionType Upload
+
+    $newDefinition.UploadDownloadDefinition.InterfaceHeaders += New-eSPInterfaceHeader `
+        -InterfaceId "ESMU5" `
+        -HeaderId 1 `
+        -HeaderOrder 1 `
+        -FileName "hac_loginids.csv" `
+        -TableName "reg_contact" `
+        -Description "HAC Login IDs Upload Definition"
+        
+    $rows = @(
+        @{ table = "reg_contact"; column = "CONTACT_ID"; length = 20 },
+        @{ table = "reg_contact"; column = "LOGIN_ID"; length = 250 }
+    )
+
+    $columns = @()
+    $columnNum = 1
+    $rows | ForEach-Object {
+        $columns += New-eSPDefinitionColumn -InterfaceID 'ESMU5' -HeaderID 1 -TableName $($PSitem.table) -FieldId $columnNum -FieldOrder $columnNum -ColumnName $($PSitem.column) -FieldLength $($PSItem.length)
+        $columnNum++
+    }
+
+    $newDefinition.UploadDownloadDefinition.InterfaceHeaders[0].InterfaceDetails = $columns
+
+    Write-Verbose ($newDefinition | ConvertTo-Json -Depth 6)
+    Submit-eSPDefinition -Definition $newDefinition -Force
+
+    <# ESMU6 - Attendance Upload Definition (Modifies Audit Log) #>
+    $newDefinition = New-eSPDefinitionTemplate `
+        -DefinitionType Upload `
+        -InterfaceId "ESMU6" `
+        -Description "eSchoolModule - Upload Attendance"
+
+    $newDefinition.UploadDownloadDefinition.InterfaceHeaders += New-eSPInterfaceHeader `
+        -InterfaceId "ESMU6" `
+        -HeaderId 1 `
+        -HeaderOrder 1 `
+        -FileName "attendance_upload.csv" `
+        -TableName "att_bottomline" `
+        -Description "eSchoolModule - ATT_BOTTOMLINE"
+
+    $index = 1
+    @("STUDENT_ID","BUILDING","ATTENDANCE_CODE","ATTENDANCE_DATE","ATTENDANCE_PERIOD","ATT_COMMENT","SCHOOL_YEAR","SOURCE","SEQUENCE_NUM","SUMMER_SCHOOL","MINUTES_ABSENT") | ForEach-Object {
+        $newDefinition.UploadDownloadDefinition.InterfaceHeaders[0].InterfaceDetails +=	New-eSPDefinitionColumn `
+            -InterfaceId "ESMU6" `
+            -HeaderId 1 `
+            -TableName "att_bottomline" `
+            -FieldId $index `
+            -FieldOrder $index `
+            -ColumnName "$PSitem" `
+            -FieldLength 255
+        $index++
+    }
+
+    $newDefinition.UploadDownloadDefinition.InterfaceHeaders += New-eSPInterfaceHeader `
+        -InterfaceId "ESMU6" `
+        -HeaderId 2 `
+        -HeaderOrder 2 `
+        -FileName "attendance_upload.csv" `
+        -TableName "att_audit_trail" `
+        -Description "eSchoolModule - ATT_AUDIT_TRAIL"
+
+    $index = 1
+    @("STUDENT_ID","BUILDING","ATTENDANCE_CODE","ATTENDANCE_DATE","ATTENDANCE_PERIOD","ATT_COMMENT","SCHOOL_YEAR","SOURCE","SEQUENCE_NUM","SUMMER_SCHOOL","MINUTES_ABSENT","ENTRY_DATE_TIME","ENTRY_USER","ENTRY_ORDER_NUM","BOTTOMLINE") | ForEach-Object {
+        $newDefinition.UploadDownloadDefinition.InterfaceHeaders[1].InterfaceDetails +=	New-eSPDefinitionColumn `
+            -InterfaceId "ESMU6" `
+            -HeaderId 2 `
+            -TableName "att_audit_trail" `
+            -FieldId $index `
+            -FieldOrder $index `
+            -ColumnName "$PSitem" `
+            -FieldLength 255
+        $index++
+    }
+    
+    #Upload Existing Contacts in the Place of the Duplicate.
+    Write-Verbose ($newDefinition | ConvertTo-Json -Depth 6)
+    Submit-eSPDefinition -Definition $newDefinition -Force
+
+    <# ESMD2 - Meal Status definition for the last 2 years #>
+
+    $newDefinition = New-eSPDefinitionTemplate `
+        -DefinitionType Download `
+        -InterfaceId "ESMD2" `
+        -Description "eSchoolModule - Meal Status"
+
+    $newDefinition.UploadDownloadDefinition.InterfaceHeaders += New-eSPInterfaceHeader `
+        -InterfaceId "ESMD2" `
+        -HeaderId 1 `
+        -HeaderOrder 1 `
+        -FileName "esp_meal_status.csv" `
+        -TableName "reg_programs" `
+        -Description "eSchoolModule - Meal Status" `
+        -AdditionalSQL 'LEFT JOIN REG ON REG_PROGRAMS.STUDENT_ID = REG.STUDENT_ID WHERE REG_PROGRAMS.PROGRAM_ID = ''ARSES'' AND REG.CURRENT_STATUS = ''A'' AND REG_PROGRAMS.START_DATE > DATEADD(year, -2, GETDATE())'
+
+    $index = 1
+    @("DISTRICT","PROGRAM_ID","FIELD_NUMBER","STUDENT_ID","START_DATE","SUMMER_SCHOOL","ENTRY_REASON","PROGRAM_VALUE","END_DATE","WITHDRAWAL_REASON","PROGRAM_OVERRIDE","CHANGE_DATE_TIME","CHANGE_UID") | ForEach-Object {
+        $newDefinition.UploadDownloadDefinition.InterfaceHeaders[0].InterfaceDetails +=	New-eSPDefinitionColumn `
+            -InterfaceId "ESMD2" `
+            -HeaderId 1 `
+            -TableName "reg_programs" `
+            -FieldId $index `
+            -FieldOrder $index `
+            -ColumnName "$PSitem" `
+            -FieldLength 255
+        $index++
+    }
+
+    #we need REG_PERSONAL for the MEAL_STATUS column.
+    $newDefinition.UploadDownloadDefinition.InterfaceHeaders += New-eSPInterfaceHeader `
+        -InterfaceId "ESMD2" `
+        -HeaderId 2 `
+        -HeaderOrder 2 `
+        -FileName "esp_meal_status_reg_personal.csv" `
+        -TableName "reg_personal" `
+        -Description "eSchoolModule - Meal Status" `
+        -AdditionalSQL 'LEFT JOIN REG ON REG_PERSONAL.STUDENT_ID = REG.STUDENT_ID WHERE REG.CURRENT_STATUS = ''A'''
+
+    $index = 1
+    @("STUDENT_ID","MEAL_STATUS") | ForEach-Object {
+        $newDefinition.UploadDownloadDefinition.InterfaceHeaders[1].InterfaceDetails +=	New-eSPDefinitionColumn `
+            -InterfaceId "ESMD2" `
+            -HeaderId 2 `
+            -TableName "reg_personal" `
+            -FieldId $index `
+            -FieldOrder $index `
+            -ColumnName "$PSitem" `
+            -FieldLength 255
+        $index++
+    }
+
+    Write-Verbose ($newDefinition | ConvertTo-Json -Depth 6)
+    Submit-eSPDefinition -Definition $newDefinition -Force
+
+    <# ESMD3 - REG_ENTRY_WITH definition for the last 2 years #>
+
+    New-eSPBulkDownloadDefinition -Tables REG_ENTRY_WITH -InterfaceId "ESMD3" -Description "eSchoolModule - REG_ENTRY_WITH" -AdditionalSQL "WHERE SCHOOL_YEAR > DATEPART(year,DATEADD(year, -2, GETDATE()))" -FilePrefix '2YR_' -DoNotLimitSchoolYear -Force
+
+    <# ESMU7 - Upload Meal Status - Modifies REG_PROGRAMS. Allows you to modify existing vector. #>
+
+    #Upload Definition
+    $newDefinition = New-eSPDefinitionTemplate -InterfaceId ESMU7 -Description "eSchoolModule - Upload Meal Status" -DefinitionType Upload
+
+    $newDefinition.UploadDownloadDefinition.InterfaceHeaders += New-eSPInterfaceHeader `
+        -InterfaceId "ESMU7" `
+        -HeaderId 1 `
+        -HeaderOrder 1 `
+        -FileName "meal_status_upload.csv" `
+        -TableName "reg_programs" `
+        -Description "Meal Status Upload"
+
+    $rows = @(
+        @{ table = "reg_programs"; column = "STUDENT_ID"; length = 10 },
+        @{ table = "reg_programs"; column = "PROGRAM_ID"; length = 5 },
+        @{ table = "reg_programs"; column = "PROGRAM_VALUE"; length = 2 },
+        @{ table = "reg_programs"; column = "FIELD_NUMBER"; length = 1 },
+        @{ table = "reg_programs"; column = "START_DATE"; length = 10 },
+        @{ table = "reg_programs"; column = "END_DATE"; length = 10 },
+        @{ table = "reg_programs"; column = "SUMMER_SCHOOL"; length = 1 },
+        @{ table = "reg_programs"; column = "PROGRAM_OVERRIDE"; length = 1 }
+    )
+
+    $columns = @()
+    $columnNum = 1
+    $rows | ForEach-Object {
+        $columns += New-eSPDefinitionColumn -InterfaceID 'ESMU7' -HeaderID 1 -TableName $($PSitem.table) -FieldId $columnNum -FieldOrder $columnNum -ColumnName $($PSitem.column) -FieldLength $($PSItem.length)
+        $columnNum++
+    }
+
+    $newDefinition.UploadDownloadDefinition.InterfaceHeaders[0].InterfaceDetails = $columns
+
+    Write-Verbose ($newDefinition | ConvertTo-Json -Depth 6)
+    Submit-eSPDefinition -Definition $newDefinition -Force
+
+    <# ESMU8 - Upload Meal Status - Closes vector dates #>
+
+    #Upload Definition - by having the MEAL_STATUS column eSchool will automatically try to do the program/vector dates.
+    $newDefinition = New-eSPDefinitionTemplate -InterfaceId ESMU8 -Description "eSchoolModule - Upload Meal Status 2" -DefinitionType Upload
+
+    $newDefinition.UploadDownloadDefinition.InterfaceHeaders += New-eSPInterfaceHeader `
+        -InterfaceId "ESMU8" `
+        -HeaderId 1 `
+        -HeaderOrder 1 `
+        -FileName "meal_status_upload_changes.csv" `
+        -TableName "reg_personal" `
+        -Description "Meal Status Upload"
+
+    $rows = @(
+        @{ table = "reg_personal"; column = "STUDENT_ID"; length = 10 },
+        @{ table = "reg_personal"; column = "MEAL_STATUS"; length = 2 },
+        @{ table = "DUMMY"; column = "DUMMY"; length = 10 },
+        @{ table = "DUMMY"; column = "DUMMY"; length = 10 },
+        @{ table = "DUMMY"; column = "DUMMY"; length = 10 }
+    )
+
+    $columns = @()
+    $columnNum = 1
+    $rows | ForEach-Object {
+        $columns += New-eSPDefinitionColumn -InterfaceID 'ESMU8' -HeaderID 1 -TableName $($PSitem.table) -FieldId $columnNum -FieldOrder $columnNum -ColumnName $($PSitem.column) -FieldLength $($PSItem.length)
+        $columnNum++
+    }
+
+    $newDefinition.UploadDownloadDefinition.InterfaceHeaders[0].InterfaceDetails = $columns
+
+    Write-Verbose ($newDefinition | ConvertTo-Json -Depth 6)
+    Submit-eSPDefinition -Definition $newDefinition -Force
+
+    <# ESMU9 - Attendance Upload Definition (Does NOT modify Audit Log) #>
+    $newDefinition = New-eSPDefinitionTemplate `
+        -DefinitionType Upload `
+        -InterfaceId "ESMU9" `
+        -Description "eSchoolModule - Attendance w/o Modify Audit Log"
+
+    $newDefinition.UploadDownloadDefinition.InterfaceHeaders += New-eSPInterfaceHeader `
+        -InterfaceId "ESMU9" `
+        -HeaderId 1 `
+        -HeaderOrder 1 `
+        -FileName "attendance_upload.csv" `
+        -TableName "att_bottomline" `
+        -Description "eSchoolModule - ATT_BOTTOMLINE"
+
+    $index = 1
+    @("STUDENT_ID","BUILDING","ATTENDANCE_CODE","ATTENDANCE_DATE","ATTENDANCE_PERIOD","ATT_COMMENT","SCHOOL_YEAR","SOURCE","SEQUENCE_NUM","SUMMER_SCHOOL","MINUTES_ABSENT") | ForEach-Object {
+        $newDefinition.UploadDownloadDefinition.InterfaceHeaders[0].InterfaceDetails +=	New-eSPDefinitionColumn `
+            -InterfaceId "ESMU9" `
+            -HeaderId 1 `
+            -TableName "att_bottomline" `
+            -FieldId $index `
+            -FieldOrder $index `
+            -ColumnName "$PSitem" `
+            -FieldLength 255
+        $index++
+    }
+    
+    #Upload Existing Contacts in the Place of the Duplicate.
+    Write-Verbose ($newDefinition | ConvertTo-Json -Depth 6)
+    Submit-eSPDefinition -Definition $newDefinition -Force
+
 }

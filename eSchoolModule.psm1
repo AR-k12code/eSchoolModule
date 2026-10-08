@@ -19931,7 +19931,7 @@ function Update-eSPInterfaceDefinitions {
         -InterfaceId "ESMU9" `
         -HeaderId 1 `
         -HeaderOrder 1 `
-        -FileName "attendance_upload.csv" `
+        -FileName "attendance_update.csv" `
         -TableName "att_bottomline" `
         -Description "eSchoolModule - ATT_BOTTOMLINE"
 
